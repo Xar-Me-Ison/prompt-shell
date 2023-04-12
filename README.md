@@ -1,2 +1,4 @@
-# prompt-shell
-A knock-off of Shell or Bash, it's just an attempt for me to learn...
+# PromptShell
+### An absolute knock-off of Powershell.
+
+### It's simply an attempt for me to refresh the language of C++ in my mind, and learn how most terminals' commands work.
