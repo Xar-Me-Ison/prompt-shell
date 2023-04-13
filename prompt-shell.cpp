@@ -27,7 +27,7 @@ PREPROCESSOR DIRECTIVES
 /* -------------
 GLOBAL VARIABLES 
 ---------------- */
-std::string APPLICATION_VERSION = "[Version 0.1]";
+std::string APPLICATION_VERSION = "[Version 0.2]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -36,9 +36,12 @@ std::string USER_GUEST_DIRECTORY = "";
 
 std::string OS = OS_NAME;
 
+std::string LINE_SEPARATOR = 
+"---------------------------------------------------------------------------------";
+
 bool STATUS_EXIT_ON = false;
 bool TEXT_DELAY_ON = true;
-
+bool ACCOUNT_CREATED_SUCCESSFULLY = false;
 
 /* ---------------
 USER-DEFINED TYPES 
@@ -47,6 +50,27 @@ enum TT_Input
 {
 	BACKSPACE = 8,
 	RETURN = 32
+};
+
+/* ---------------
+CLASS DECLARATIONS 
+------------------ */
+class promptShellUser
+{
+    /* Class methods */
+public:
+    promptShellUser(); // Default constructor, to sign up..
+    promptShellUser(int); // Overloaded constructor, to login..
+    ~promptShellUser();
+private:
+    void createUsername();
+    void createPassword();
+
+    std::string getPassword();
+	/* Class variables */
+public:
+private:
+    std::string username, password, email;
 };
 
 /* --------------------------
@@ -72,6 +96,116 @@ int main()
     
 }
 
+/* --------------
+CLASS DEFINITIONS 
+----------------- */
+promptShellUser::promptShellUser()
+{
+    std::string input;
+
+    createUsername();
+    createPassword();
+
+    if (ACCOUNT_CREATED_SUCCESSFULLY)
+    {
+        // create user data
+    }
+
+}
+promptShellUser::promptShellUser(int code) { }
+promptShellUser::~promptShellUser() 
+{ 
+    ACCOUNT_CREATED_SUCCESSFULLY = false;
+}
+
+void promptShellUser::createUsername()
+{
+    std::string input;
+
+    printTypewriter("\nUsername: ", 0); getline(std::cin, input);
+
+    while (input.size() > 60 || input.size() == 0)
+    {
+        // printTypewriter("Username is taken, please try again.", 2);
+        printTypewriter("Username: ", 0); getline(std::cin, input);
+    }
+
+    username = input;
+}
+
+void promptShellUser::createPassword() 
+{ 
+    std::string input1, input2;
+    bool password_match;
+    int password_counter = 0;
+
+    do
+    {
+        if (password_counter != 0)
+        {
+            printTypewriter("Password: ", 0);
+        }
+
+        printTypewriter("Password: ", 0); input1 = getPassword();
+        while (input1.size() <= 1)
+        {
+            printTypewriter("Weak password, try again.", 2);
+            printTypewriter("Password: ", 0); input1 = getPassword();
+        }
+
+        printTypewriter("Retype password: ", 0); input2 = getPassword();
+
+        while (input2.size() <= 1)
+        {
+            printTypewriter("Weak password, try again.", 2);
+            printTypewriter("Password: ", 0); input2 = getPassword();
+        }
+
+        if (input1 != input2)
+        {
+            printTypewriter("\nERROR: Password do not match.", 1);
+
+            if (password_counter == 2)
+            {
+                ACCOUNT_CREATED_SUCCESSFULLY = false;
+                break;
+            }
+            password_match = false;
+        }
+        else
+        {
+            ACCOUNT_CREATED_SUCCESSFULLY = true;
+            password_match = true;
+            password = input1;
+        }
+
+        password_counter++;
+    } while (!password_match);
+    
+}
+
+std::string promptShellUser::getPassword()
+{
+	std::string password;	
+	char input_ch;
+
+	while ((input_ch = getch()) != '\r')
+	{
+		if (input_ch == '\b' && password.length() > 0)
+		{
+			password.pop_back();
+			std::cout << "\b \b";
+		}
+		else if (input_ch != '\b')
+		{
+			password.push_back(input_ch);
+			std::cout << '*';
+		}
+	}
+	
+	std::cout << std::endl;
+	return password;
+}
 /* -------------------------
 THREAD FUNCTIONS DEFINITIONS 
 ---------------------------- */
@@ -82,14 +216,20 @@ void promptShellIntroduction()
     else
         system("clear");
 
-    printTypewriter("PromptShell - Terminal Emulator " + APPLICATION_VERSION, 1);
-    printTypewriter("Copyright (C) PromptShell Corporation. All rights reserved.", 2);
+    printTypewriter(LINE_SEPARATOR, 1, 1, 1);
+    printTypewriter("PromptShell - Terminal Application " + APPLICATION_VERSION, 1, 1, 1);
+    printTypewriter("Copyright (C) PromptShell Corporation. All rights reserved.", 2, 1, 1);
+    printTypewriter("Install the latest PromptShell for new features and improvements! https://bit.ly/3mvnEc2", 2, 1, 1);
 }
 
 void promptShellLoginSignIn()
 {
     USER_INPUT = "";
     std::string input;
+
+    promptShellUser *user_ptr;
+    user_ptr = nullptr;
+
 
     do
     {
@@ -110,9 +250,11 @@ void promptShellLoginSignIn()
 
         if (input == "help")
         {
-            printTypewriter("delay           Allow the user to turn the text delay ", 0, 5, 15); printTypewriter((!TEXT_DELAY_ON) ? "on." : "off.", 1, 5, 15);
-            printTypewriter("login           Allow the user to login onto their account.", 1, 5, 15);
-            printTypewriter("signup          Allow the user to create their account.", 2, 5, 15);
+            // printTypewriter("Guest user's commands. For full functionality please login, or sign up.", 1, 5, 15);
+            printTypewriter("\nDELAY           Allow the user to turn the text delay ", 0, 5, 15); printTypewriter((!TEXT_DELAY_ON) ? "on." : "off.", 1, 5, 15);
+            printTypewriter("LOGIN           Allow the user to login onto their account.", 1, 5, 15);
+            printTypewriter("SIGNUP          Allow the user to create their account.", 1, 5, 15);
+            printTypewriter("VERSION         Allow the user to see the current running version."2, 5, 15);
             
 
         }
@@ -122,10 +264,31 @@ void promptShellLoginSignIn()
 			printTypewriter("Text delay has been turned ", 0); 
 			printTypewriter((TEXT_DELAY_ON) ? "on." : "off.", 2);
         }
-        else if (input == "exit" || input == "quit") 
+        else if (input == "log" || input == "login")
         {
-            STATUS_EXIT_ON = true;
-            return;
+            user_ptr = new promptShellUser(69);
+
+            if (user_ptr == nullptr)
+            {
+                printTypewriter("\nERROR: Unable to login at the moment.", 1);
+                continue;
+            }
+
+            delete user_ptr; user_ptr = nullptr;
+        }
+        else if (input == "sign" || input == "signup")
+        {
+            if (user_ptr == nullptr)
+            {
+                //printTypewriter("SUCCESS", 1);
+                user_ptr = new promptShellUser;
+            }
+            else
+            {
+                printTypewriter("ERROR: Unable to create an account at this time.", 1);
+                continue;
+            }
+            
         }
         else if (input == "cls" || input == "clear")
         {
@@ -134,6 +297,15 @@ void promptShellLoginSignIn()
                 system("cls");
             else
                 system("clear");
+        }
+        else if (input == "version" || input == "ver")
+        {
+            
+        }
+        else if (input == "exit" || input == "quit") 
+        {
+            STATUS_EXIT_ON = true;
+            return;
         }
         else 
         {
