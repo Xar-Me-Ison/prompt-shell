@@ -43,6 +43,17 @@ bool STATUS_EXIT_ON = false;
 bool TEXT_DELAY_ON = true;
 bool ACCOUNT_CREATED_SUCCESSFULLY = false;
 
+/* ------------
+INLINE FUNCTION
+--------------- */
+inline void systemClear()
+{
+    if (OS == "Windows")
+        system("cls");
+    else
+        system("clear");
+}
+
 /* ---------------
 USER-DEFINED TYPES 
 ------------------ */
@@ -211,11 +222,7 @@ THREAD FUNCTIONS DEFINITIONS
 ---------------------------- */
 void promptShellIntroduction()
 {
-    if (OS == "Windows")
-        system("cls");
-    else
-        system("clear");
-
+    systemClear();
     printTypewriter(LINE_SEPARATOR, 1, 1, 1);
     printTypewriter("PromptShell - Terminal Application " + APPLICATION_VERSION, 1, 1, 1);
     printTypewriter("Copyright (C) PromptShell Corporation. All rights reserved.", 2, 1, 1);
@@ -254,7 +261,7 @@ void promptShellLoginSignIn()
             printTypewriter("\nDELAY           Allow the user to turn the text delay ", 0, 5, 15); printTypewriter((!TEXT_DELAY_ON) ? "on." : "off.", 1, 5, 15);
             printTypewriter("LOGIN           Allow the user to login onto their account.", 1, 5, 15);
             printTypewriter("SIGNUP          Allow the user to create their account.", 1, 5, 15);
-            printTypewriter("VERSION         Allow the user to see the current running version."2, 5, 15);
+            printTypewriter("VERSION         Allow the user to see the current running version.", 2, 5, 15);
             
 
         }
@@ -292,15 +299,14 @@ void promptShellLoginSignIn()
         }
         else if (input == "cls" || input == "clear")
         {
-
+            systemClear();
+        }
+        else if (input == "version" || input == "ver")
+        {
             if (OS == "Windows")
                 system("cls");
             else
                 system("clear");
-        }
-        else if (input == "version" || input == "ver")
-        {
-            
         }
         else if (input == "exit" || input == "quit") 
         {
