@@ -534,7 +534,7 @@ void promptShellLoginSignIn()
         }
         else if (command == "version" || command == "ver")
         {
-            
+            versionCommand();
         }
         else if (command == "terminate" || command == "term" || command == "exit" || input == "quit") 
         {
