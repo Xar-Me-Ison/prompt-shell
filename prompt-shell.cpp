@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include <direct.h>
+#include <dirent.h>
 
 #include <ctime>
 #include <cstdlib>
@@ -8,22 +9,25 @@
 
 #include <iostream>
 #include <iterator>
-#include <fstream>
 #include <sstream>
+#include <fstream>
+#include <filesystem>
 
 #include <vector>
 #include <unistd.h>  
-#include <Windows.h>  
+#include <Windows.h>
 
 /* --------------------
 PREPROCESSOR DIRECTIVES
 ----------------------- */
 #ifdef _WIN32
 #define OS_NAME "Windows"
+#define mkdir _mkdir
 #elif defined(__APPLE__)
 #define OS_NAME "Mac OS"
 #elif defined(__linux__)
 #define OS_NAME "Linux"
+#include <sys/stat.h>
 #else
 #define OS_NAME "Unknown"
 #endif
@@ -31,7 +35,7 @@ PREPROCESSOR DIRECTIVES
 /* -------------
 GLOBAL VARIABLES 
 ---------------- */
-std::string APPLICATION_VERSION = "[Version 0.9]";
+std::string APPLICATION_VERSION = "[Version 1.0]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -95,6 +99,14 @@ FUNCTION DECLARATIONS
 --------------------- */
 void printStatic(std::string text, int newline);
 void printTypewriter(std::string text, int newline, int low_delay = 10, int high_delay = 20);
+void cdCommand(const std::vector<std::string>& arguments);
+void lsCommand(const std::vector<std::string>& arguments);
+void pwdCommand(const std::vector<std::string>& arguments);
+void rmCommand(const std::string& file_path);
+void mkdirCommand(const std::string& dir_path);
+void touchCommand(const std::string& file_path);
+void echoCommand(const std::string& text);
+void updateDirectory();
 
 /* -------------------------
 INLINE FUNCTION DECLARATIONS
@@ -222,8 +234,8 @@ void promptShellUser::createUserData()
     const char* path_userdata = ".userdata"; 
     const char* path_database = ".database";
 
-    _mkdir(path_userdata);
-    _mkdir(path_database);
+    mkdir(path_userdata);
+    mkdir(path_database);
 
     if (SetFileAttributes(path_userdata, FILE_ATTRIBUTE_HIDDEN) == 0) { std::cout << "Failed to hide directory" << std::endl; }
     if (SetFileAttributes(path_database, FILE_ATTRIBUTE_HIDDEN) == 0) { std::cout << "Failed to hide directory" << std::endl; }
@@ -378,8 +390,11 @@ void promptShellUser::loggedIn()
 
 	do 
 	{
+        // To update the 'USER_LOGGED_DIRECTORY' beforehand ..
+        updateDirectory(); 
+
 		// CL-interface for the logged in user..
-		printTypewriter(USER_GUEST_DIRECTORY + "> ", 0); 
+		printTypewriter(USER_LOGGED_DIRECTORY + "> ", 0); 
 
 		// Getting the logged in user's input..
 		getline(std::cin, input);
@@ -411,6 +426,38 @@ void promptShellUser::loggedIn()
         {
             lineCommand();
         }
+        else if (command == "cls" || command == "clear" || command == "clean")
+		{
+			systemClear();
+		}
+        else if (command == "cd")
+        {
+            cdCommand(tokens);
+        }
+        else if (command == "ls")
+        {
+            lsCommand(tokens);
+        }
+        else if (command == "pwd")
+        {
+            pwdCommand(tokens);
+        }
+        else if (command == "rm")
+        {
+            rmCommand(tokens[1]);
+        }
+        else if (command == "mkdir")
+        {
+            mkdirCommand(tokens[1]);
+        }
+        else if (command == "touch")
+        {
+            touchCommand(tokens[1]);
+        }
+        else if (command == "echo")
+        {
+            echoCommand(tokens[1]);
+        }
 		else if (command == "logout" || command == "signout")	
 		{
 			printTypewriter("\nSUCCESS: You have been logged out as \033[1m" + username + "\033[0m.", 1, 30, 40);
@@ -423,10 +470,6 @@ void promptShellUser::loggedIn()
 			lineSeparator();
 			printTypewriter(APPLICATION_VERSION + " | " + APPLICATION_DATE_VERSION + " - Developed by Harrison L.  \033[1m<" + username + ">\033[0m", 1);
 			printTypewriter("Copyright (C) PromptShell Corporation. All rights reserved.", 2);
-		}
-		else if (command == "cls" || command == "clear" || command == "clean")
-		{
-			systemClear();
 		}
 		else if (command == "terminate" || command == "term" || command == "exit" || command == "quit") 
 		{
@@ -449,7 +492,6 @@ void promptShellIntroduction()
     printTypewriter("Copyright (C) PromptShell Corporation. All rights reserved.", 2, 1, 1);
     printTypewriter("Install the latest PromptShell for new features and improvements! https://bit.ly/3mvnEc2", 2, 1, 1);
 }
-
 void promptShellLoginSignIn()
 {
     // Required for the command parser ..
@@ -458,13 +500,14 @@ void promptShellLoginSignIn()
     std::istringstream iss;
     std::vector<std::string> tokens;
 
-
     promptShellUser *user_ptr;
     user_ptr = nullptr;
 
-
     do
     {
+        // To update the 'USER_GUEST_DIRECTORY' beforehand ..
+        updateDirectory(); 
+
         // CL-interface for the default user..
         printTypewriter(USER_GUEST_DIRECTORY + "> ", 0);
 
@@ -486,9 +529,6 @@ void promptShellLoginSignIn()
 
         command = tokens[0];
 
-        // Transforming the user's input to lowercase for easier case matching..
-		// std::transform(input.begin(), input.end(), input.begin(), ::tolower);
-
         if (command == "help")
         {
             helpCommand(false);
@@ -500,6 +540,38 @@ void promptShellLoginSignIn()
         else if (command == "line")
         {
             lineCommand();
+        }
+        else if (command == "cls" || command == "clear" || command == "clean")
+		{
+			systemClear();
+		}
+        else if (command == "cd")
+        {
+            cdCommand(tokens);
+        }
+        else if (command == "ls")
+        {
+            lsCommand(tokens);
+        }
+        else if (command == "pwd")
+        {
+            pwdCommand(tokens);
+        }
+        else if (command == "rm")
+        {
+            rmCommand(tokens[1]);
+        }
+        else if (command == "mkdir")
+        {
+            mkdirCommand(tokens[1]);
+        }
+        else if (command == "touch")
+        {
+            touchCommand(tokens[1]);
+        }
+        else if (command == "echo")
+        {
+            echoCommand(tokens[1]);
         }
         else if (command == "log" || command == "login")
         {
@@ -526,10 +598,6 @@ void promptShellLoginSignIn()
             }
             
         }
-        else if (command == "cls" || command == "clear")
-        {
-            systemClear();
-        }
         else if (command == "version" || command == "ver")
         {
             versionCommand();
@@ -543,7 +611,6 @@ void promptShellLoginSignIn()
         {
             printTypewriter("'" + input + "'" + " is not a recognized command.", 2);
         }
-
     } while (true);
 }
 
@@ -598,6 +665,117 @@ void printTypewriter(std::string text, int newline, int low_delay, int high_dela
         break;
     }
 }
+void cdCommand(const std::vector<std::string>& arguments)
+{
+    if (arguments.size() < 2)
+    {
+        printTypewriter("Usage: cd <directory>", 2, 5, 10);
+    }
+    else
+    {
+        if (chdir(arguments[1].c_str()) == 0)
+        {
+            // Directory changed successfully
+        }
+        else
+        {
+            printTypewriter("Directory not found: " + arguments[1], 1, 5, 10);
+        }
+    }
+}
+void lsCommand(const std::vector<std::string>& arguments)
+{
+    if (arguments.size() > 1)
+    {
+        printTypewriter("Usage: ls", 2, 5, 10);
+        return;
+    }
+
+    DIR* dir;
+    struct dirent* entry;
+
+    if ((dir = opendir(".")) != NULL)
+    {
+        while ((entry = readdir(dir)) != NULL)
+        {
+            printTypewriter(entry->d_name, 1, 5, 10);
+        }
+        closedir(dir);
+    }
+    else
+    {
+        std::cerr << "Failed to open directory" << std::endl;
+    }
+
+}
+void pwdCommand(const std::vector<std::string>& arguments)
+{
+    if (arguments.size() > 1)
+    {
+        printTypewriter("Usage: pwd", 2, 5, 10);
+        return;
+    }
+
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL)
+    {
+        printTypewriter("\nPath", 1, 5, 10);
+        printTypewriter("---", 1, 5, 10);
+        printTypewriter(cwd, 3, 5, 10);
+    }
+    else
+    {
+        std::cerr << "Failed to get current working directory" << std::endl;
+    }
+}
+void rmCommand(const std::string& file_path)
+{
+    if (remove(file_path.c_str()) == 0)
+    {
+        printTypewriter("Removed file: " + file_path, 2, 5, 10);
+    }
+    else
+    {
+        printTypewriter("ERROR: Failed to remove file '" + file_path + "'.", 2, 5, 10);
+    }
+}
+void mkdirCommand(const std::string& dir_path)
+{
+    if (mkdir(dir_path.c_str()) == 0)
+    {
+        printTypewriter("Created directory: " + dir_path, 2, 5, 10);
+    }
+    else
+    {
+        printTypewriter("ERROR: Failed to create directory '" + dir_path + "'.", 2, 5, 10);
+    }
+}
+void touchCommand(const std::string& file_path)
+{
+    std::ofstream file(file_path);
+    if (file.good())
+    {
+        printTypewriter("Created file: '" + file_path + "'.", 2, 5, 10);
+    }
+    else
+    {
+        printTypewriter("ERROR: Failed to create file '" + file_path + "'.", 2, 5, 10);
+    }
+}
+void echoCommand(const std::string& text)
+{
+    printTypewriter(text, 2, 5, 10);
+}
+void updateDirectory()
+{
+    // Solely to update the 'USER_GUEST_DIRECTORY' & 'USER_LOGGED_DIRECTORY' ..
+    char cwd[1024];
+    if (getcwd(cwd, sizeof(cwd)) != NULL)
+    {
+        USER_GUEST_DIRECTORY = cwd;
+        USER_LOGGED_DIRECTORY = cwd;
+    }
+}
 
 /* ------------------------
 INLINE FUNCTION DEFINITIONS
@@ -627,25 +805,31 @@ inline void lineSeparator()
 }
 inline void helpCommand(bool flag)
 {
-    if (flag)
+    printTypewriter("\n\033[1mSETTINGS\033[0m", 1, 5, 15);
+    printTypewriter("    DELAY           Allow the user to turn the text delay ", 0, 5, 15); printTypewriter((!TEXT_DELAY_ON) ? "on." : "off.", 1, 5, 15);
+    printTypewriter("    LINE            Allow the user to turn the line seperator ", 0, 5, 15); printTypewriter((!LINE_SEPERATOR_ON) ? "on." : "off.", 1, 5, 15);
+    printTypewriter("\n\033[1mCOMMANDS\033[0m", 1, 5, 15);
+    printTypewriter("    CLS             Allow the user to clear up the terminal.", 1, 5, 15);
+    printTypewriter("    CD              Allow the user to change directories.", 1, 5, 15);
+    printTypewriter("    LS              Allow the user to list the current directory contents.", 1, 5, 15);
+    printTypewriter("    PWD             Allow the user to print the working directory.", 1, 5, 15);
+    printTypewriter("    RM              Allow the user to remove files and directories.", 1, 5, 15);
+    printTypewriter("    MKDIR           Allow the user to create directories.", 1, 5, 15);
+    printTypewriter("    TOUCH           Allow the user to create empty files.", 1, 5, 15);
+    printTypewriter("    ECHO            Allow the user to print text to the terminal.", 1, 5, 15);
+    printTypewriter("\n\033[1mFUNCTIONS\033[0m", 1, 5, 15);
+    if (flag) 
     {
-        printTypewriter("\nDELAY           Allow the user to turn the text delay ", 0, 5, 15); printTypewriter((!TEXT_DELAY_ON) ? "on." : "off.", 1, 5, 15);
-        printTypewriter("LINE            Allow the user to turn the line seperator ", 0, 5, 15); printTypewriter((!LINE_SEPERATOR_ON) ? "on." : "off.", 1, 5, 15);
-        printTypewriter("CLEAR           Allow the user to clear up the terminal.", 1, 5, 15);
-        printTypewriter("LOGOUT          Allow the user to logout of their account.", 1, 5, 15);
-        printTypewriter("VERSION         Allow the user to see the current running version.", 1, 5, 15);
-        printTypewriter("TERMINATE       Allow the user to terminate the terminal application.", 2, 5, 15);
+    printTypewriter("    LOGOUT          Allow the user to logout of their account.", 1, 5, 15);
     }
     else
     {
-        printTypewriter("\nDELAY           Allow the user to turn the text delay ", 0, 5, 15); printTypewriter((!TEXT_DELAY_ON) ? "on." : "off.", 1, 5, 15);
-        printTypewriter("LINE            Allow the user to turn the line seperator ", 0, 5, 15); printTypewriter((!LINE_SEPERATOR_ON) ? "on." : "off.", 1, 5, 15);
-        printTypewriter("CLEAR           Allow the user to clear up the terminal.", 1, 5, 15);
-        printTypewriter("LOGIN           Allow the user to login onto their account.", 1, 5, 15);
-        printTypewriter("SIGNUP          Allow the user to create their account.", 1, 5, 15);
-        printTypewriter("VERSION         Allow the user to see the current running version.", 1, 5, 15);
-        printTypewriter("TERMINATE       Allow the user to terminate the terminal application.", 2, 5, 15);
+    printTypewriter("    LOGIN           Allow the user to login onto their account.", 1, 5, 15);
+    printTypewriter("    SIGNUP          Allow the user to create their account.", 1, 5, 15);
     }
+    
+    printTypewriter("    VERSION         Allow the user to see the current running version.", 1, 5, 15);
+    printTypewriter("    TERMINATE       Allow the user to terminate the terminal application.", 2, 5, 15);
 }
 inline void delayCommand()
 {
