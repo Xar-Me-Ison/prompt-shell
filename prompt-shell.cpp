@@ -29,7 +29,7 @@ PREPROCESSOR DIRECTIVES
 /* -------------
 GLOBAL VARIABLES 
 ---------------- */
-std::string APPLICATION_VERSION = "[Version 0.3]";
+std::string APPLICATION_VERSION = "[Version 0.4]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -80,6 +80,7 @@ private:
     void createUsername();
     void createPassword();
     void createUserData();
+    bool isUsernameAvailable(std::string);
 
     std::string getPassword();
 
@@ -130,6 +131,7 @@ promptShellUser::promptShellUser()
 
     if (ACCOUNT_CREATED_SUCCESSFULLY)
     {
+        printTypewriter("\nSUCCESS: Your account has been created successfully, you can now log in.", 20, 30);
         createUserData();
     }
     else 
@@ -168,9 +170,9 @@ void promptShellUser::createUsername()
 
     printTypewriter("\nUsername: ", 0); getline(std::cin, input);
 
-    while (input.size() > 60 || input.size() == 0)
+    while (input.size() > 60 || input.size() == 0 || !isUsernameAvailable(input))
     {
-        // printTypewriter("Username is taken, please try again.", 2);
+        printTypewriter("Username is taken, please try again.", 2);
         printTypewriter("Username: ", 0); getline(std::cin, input);
     }
 
@@ -205,8 +207,9 @@ void promptShellUser::createPassword()
         {
             printTypewriter("\nERROR: Password do not match.", 2);
 
-            if (password_counter == 2)
+            if (password_counter >= 2)
             {
+                printTypewriter("\nERROR: Too many attempts have been made, try again.", 2);
                 ACCOUNT_CREATED_SUCCESSFULLY = false;
                 break;
             }
@@ -254,6 +257,24 @@ void promptShellUser::createUserData()
     outfile << password << std::endl;
     // outfile << email << std::endl;
     outfile.close();
+}
+
+bool promptShellUser::isUsernameAvailable(std::string usrname)
+{
+   	std::ifstream infile(".database/.usernames.txt");
+	std::string search_string = usrname;
+	std::string line;
+
+	while (std::getline(infile, line))
+	{
+		// If it's not available return false ..
+		if (line.find(search_string) != std::string::npos)
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 std::string promptShellUser::getPassword()
