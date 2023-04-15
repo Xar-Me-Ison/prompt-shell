@@ -7,9 +7,11 @@
 #include <conio.h>
 
 #include <iostream>
+#include <iterator>
 #include <fstream>
 #include <sstream>
 
+#include <vector>
 #include <unistd.h>  
 #include <Windows.h>  
 
@@ -29,7 +31,7 @@ PREPROCESSOR DIRECTIVES
 /* -------------
 GLOBAL VARIABLES 
 ---------------- */
-std::string APPLICATION_VERSION = "[Version 0.7]";
+std::string APPLICATION_VERSION = "[Version 0.9]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -98,9 +100,11 @@ void printTypewriter(std::string text, int newline, int low_delay = 10, int high
 INLINE FUNCTION DECLARATIONS
 ---------------------------- */
 inline void systemClear();
-
 inline void lineSeparator();
-
+inline void helpCommand(bool flag);
+inline void delayCommand();
+inline void lineCommand();
+inline void versionCommand();
 
 int main()
 {
@@ -117,8 +121,6 @@ CLASS DEFINITIONS
 ----------------- */
 promptShellUser::promptShellUser()
 {
-    std::string input;
-
     createUsername();
     createPassword();
 
@@ -127,11 +129,6 @@ promptShellUser::promptShellUser()
         printTypewriter("\nSUCCESS: Your account has been created successfully, you can now log in.", 2, 20, 30);
         createUserData();
     }
-    // else 
-    // {
-    //     validateUser();
-    // }
-
 }
 promptShellUser::promptShellUser(int code) 
 {
@@ -296,7 +293,7 @@ std::string promptShellUser::getPassword()
 /* Invoked by the overloaded constructor */
 bool promptShellUser::validateUser()
 {
-std::ifstream username_infile(".database/.usernames.txt");
+    std::ifstream username_infile(".database/.usernames.txt");
 	std::fstream user_filename;
 	std::string usrname, passwd;
 	std::string usr_line, pwd_line;
@@ -374,8 +371,10 @@ void promptShellUser::loggedIn()
     printTypewriter("Copyright (C) PromptShell Corporation. All rights reserved.", 2, 1, 1);
     printTypewriter("Install the latest PromptShell for new features and improvements! https://bit.ly/3mvnEc2", 2, 1, 1);
 
-    USER_INPUT = "";
-	std::string input;
+    std::string input;
+    std::string command;
+    std::istringstream iss;
+    std::vector<std::string> tokens;
 
 	do 
 	{
@@ -385,62 +384,58 @@ void promptShellUser::loggedIn()
 		// Getting the logged in user's input..
 		getline(std::cin, input);
 
-		// If the user's input is empty or whitespace, continue..
-		if (!(input.find_first_not_of(' ') != std::string::npos))
-			continue;
+        iss.clear(); // Clear the state of istringstream ..
+        iss.str(input); // Set the string to parse in istringstream ..
 
-		USER_INPUT = input;
+        tokens.clear(); // Clear the vector of tokens ..
 
-		// Transforming the user's input to lowercase for easier case matching..
-		std::transform(input.begin(), input.end(), input.begin(), ::tolower);
+        // Split input into tokens 
+        tokens = {std::istream_iterator<std::string>{iss},
+              std::istream_iterator<std::string>{}};
 
-		if (input == "help")
-		{
-			printTypewriter("\nDELAY           Allow the user to turn the text delay ", 0, 5, 15); printTypewriter((!TEXT_DELAY_ON) ? "on." : "off.", 1, 5, 15);
-            printTypewriter("LINE            Allow the user to turn the line seperator ", 0, 5, 15); printTypewriter((!LINE_SEPERAT_ON) ? "on." : "off.", 1, 5, 15);
-            printTypewriter("CLEAR           Allow the user to clear up the terminnal.", 1, 5, 15);
-			printTypewriter("LOGOUT          Allow the user to logout of their account.", 1, 5, 15);
-            printTypewriter("VERSION         Allow the user to see the current running version.", 1, 5, 15);
-            printTypewriter("TERMINATE       Allow the user to terminate the terminal application.", 2, 5, 15);
-			
+        // If the user's input is empty or whitespace, continue..
+        if (tokens.empty())
+            continue;
+
+        command = tokens[0];
+
+		if (command == "help")
+		{   
+            helpCommand(true);
 		}
-		else if (input == "delay") 
+		else if (command == "delay") 
 		{
-			TEXT_DELAY_ON = !TEXT_DELAY_ON;
-			printTypewriter("Text delay has been turned ", 0); 
-			printTypewriter((TEXT_DELAY_ON) ? "on." : "off.", 2);
+			delayCommand();
 		}
-        else if (input == "line")
+        else if (command == "line")
         {
-            LINE_SEPERAT_ON = !LINE_SEPERAT_ON;
-            printTypewriter("Line seperator has been turned ", 0); 
-			printTypewriter((LINE_SEPERAT_ON) ? "on." : "off.", 2);
+            lineCommand();
         }
-		else if (input == "logout" || input == "signout")	
+		else if (command == "logout" || command == "signout")	
 		{
 			printTypewriter("\nSUCCESS: You have been logged out as \033[1m" + username + "\033[0m.", 1, 30, 40);
             promptShellIntroduction();
 			return;
 		}
-		else if (input == "version" || input == "ver")
+		else if (command == "version" || command == "ver")
 		{
             systemClear();
 			lineSeparator();
 			printTypewriter(APPLICATION_VERSION + " | " + APPLICATION_DATE_VERSION + " - Developed by Harrison L.  \033[1m<" + username + ">\033[0m", 1);
 			printTypewriter("Copyright (C) GNB Corporation. All rights reserved.", 2);
 		}
-		else if (input == "cls" || input == "clear" || input == "clean")
+		else if (command == "cls" || command == "clear" || command == "clean")
 		{
 			system("cls");
 		}
-		else if (input == "terminate" || input == "term" || input == "exit" || input == "quit") 
+		else if (command == "terminate" || command == "term" || command == "exit" || command == "quit") 
 		{
-			return;
+            exit(EXIT_SUCCESS);
 		}
 		else
 		{
 
-			printTypewriter("'" + USER_INPUT + "'" + " is not a recognized command.", 2); 
+			printTypewriter("'" + input + "'" + " is not a recognized command.", 2); 
 		}
 	} while (LOGGED_IN);
 
@@ -459,8 +454,12 @@ void promptShellIntroduction()
 
 void promptShellLoginSignIn()
 {
-    USER_INPUT = "";
+    // Required for the command parser ..
     std::string input;
+    std::string command;
+    std::istringstream iss;
+    std::vector<std::string> tokens;
+
 
     promptShellUser *user_ptr;
     user_ptr = nullptr;
@@ -474,40 +473,37 @@ void promptShellLoginSignIn()
         // Getting the user's input..
         std::getline(std::cin, input);
 
+        iss.clear(); // Clear the state of istringstream ..
+        iss.str(input); // Set the string to parse in istringstream ..
+
+        tokens.clear(); // Clear the vector of tokens ..
+
+        // Split input into tokens 
+        tokens = {std::istream_iterator<std::string>{iss},
+              std::istream_iterator<std::string>{}};
+
         // If the user's input is empty or whitespace, continue..
-        if (!(input.find_first_not_of(' ') != std::string::npos))
-			continue;
-        
-        USER_INPUT = input;
+        if (tokens.empty())
+            continue;
+
+        command = tokens[0];
 
         // Transforming the user's input to lowercase for easier case matching..
-		std::transform(input.begin(), input.end(), input.begin(), ::tolower);
+		// std::transform(input.begin(), input.end(), input.begin(), ::tolower);
 
-        if (input == "help")
+        if (command == "help")
         {
-            printTypewriter("\nDELAY           Allow the user to turn the text delay ", 0, 5, 15); printTypewriter((!TEXT_DELAY_ON) ? "on." : "off.", 1, 5, 15);
-            printTypewriter("LINE            Allow the user to turn the line seperator ", 0, 5, 15); printTypewriter((!LINE_SEPERAT_ON) ? "on." : "off.", 1, 5, 15);
-            printTypewriter("CLEAR           Allow the user to clear up the terminnal.", 1, 5, 15);
-            printTypewriter("LOGIN           Allow the user to login onto their account.", 1, 5, 15);
-            printTypewriter("SIGNUP          Allow the user to create their account.", 1, 5, 15);
-            printTypewriter("VERSION         Allow the user to see the current running version.", 1, 5, 15);
-            printTypewriter("TERMINATE       Allow the user to terminate the terminal application.", 2, 5, 15);
-            
-
+            helpCommand(false);
         }
-        else if (input == "delay") 
+        else if (command == "delay") 
 		{
-			TEXT_DELAY_ON = !TEXT_DELAY_ON;
-			printTypewriter("Text delay has been turned ", 0); 
-			printTypewriter((TEXT_DELAY_ON) ? "on." : "off.", 2);
+			delayCommand();
         }
-        else if (input == "line")
+        else if (command == "line")
         {
-            LINE_SEPERAT_ON = !LINE_SEPERAT_ON;
-            printTypewriter("Line seperator has been turned ", 0); 
-			printTypewriter((LINE_SEPERAT_ON) ? "on." : "off.", 2);
+            lineCommand();
         }
-        else if (input == "log" || input == "login")
+        else if (command == "log" || command == "login")
         {
             user_ptr = new promptShellUser(69);
 
@@ -519,11 +515,10 @@ void promptShellLoginSignIn()
 
             delete user_ptr; user_ptr = nullptr;
         }
-        else if (input == "sign" || input == "signup")
+        else if (command == "sign" || command == "signup")
         {
             if (user_ptr == nullptr)
             {
-                //printTypewriter("SUCCESS", 1);
                 user_ptr = new promptShellUser;
             }
             else
@@ -533,25 +528,22 @@ void promptShellLoginSignIn()
             }
             
         }
-        else if (input == "cls" || input == "clear")
+        else if (command == "cls" || command == "clear")
         {
             systemClear();
         }
-        else if (input == "version" || input == "ver")
+        else if (command == "version" || command == "ver")
         {
-            systemClear();
-            lineSeparator();
-            printTypewriter("\n" + APPLICATION_VERSION + " | " + APPLICATION_DATE_VERSION + " - Developed by Harrison L.", 1);
-            printTypewriter("Copyright (C) PromptShell Corporation. All rights reserved.", 2, 1, 1);
+            
         }
-        else if (input == "terminate" || input == "term" || input == "exit" || input == "quit") 
+        else if (command == "terminate" || command == "term" || command == "exit" || input == "quit") 
         {
             STATUS_EXIT_ON = true;
             return;
         }
         else 
         {
-            printTypewriter("'" + USER_INPUT + "'" + " is not a recognized command.", 2);
+            printTypewriter("'" + input + "'" + " is not a recognized command.", 2);
         }
 
     } while (true);
@@ -635,4 +627,49 @@ inline void lineSeparator()
     {
 
     }
+}
+
+inline void helpCommand(bool flag)
+{
+    if (flag)
+    {
+        printTypewriter("\nDELAY           Allow the user to turn the text delay ", 0, 5, 15); printTypewriter((!TEXT_DELAY_ON) ? "on." : "off.", 1, 5, 15);
+        printTypewriter("LINE            Allow the user to turn the line seperator ", 0, 5, 15); printTypewriter((!LINE_SEPERAT_ON) ? "on." : "off.", 1, 5, 15);
+        printTypewriter("CLEAR           Allow the user to clear up the terminnal.", 1, 5, 15);
+        printTypewriter("LOGOUT          Allow the user to logout of their account.", 1, 5, 15);
+        printTypewriter("VERSION         Allow the user to see the current running version.", 1, 5, 15);
+        printTypewriter("TERMINATE       Allow the user to terminate the terminal application.", 2, 5, 15);
+    }
+    else
+    {
+        printTypewriter("\nDELAY           Allow the user to turn the text delay ", 0, 5, 15); printTypewriter((!TEXT_DELAY_ON) ? "on." : "off.", 1, 5, 15);
+        printTypewriter("LINE            Allow the user to turn the line seperator ", 0, 5, 15); printTypewriter((!LINE_SEPERAT_ON) ? "on." : "off.", 1, 5, 15);
+        printTypewriter("CLEAR           Allow the user to clear up the terminnal.", 1, 5, 15);
+        printTypewriter("LOGIN           Allow the user to login onto their account.", 1, 5, 15);
+        printTypewriter("SIGNUP          Allow the user to create their account.", 1, 5, 15);
+        printTypewriter("VERSION         Allow the user to see the current running version.", 1, 5, 15);
+        printTypewriter("TERMINATE       Allow the user to terminate the terminal application.", 2, 5, 15);
+    }
+}
+
+inline void delayCommand()
+{
+    TEXT_DELAY_ON = !TEXT_DELAY_ON;
+    printTypewriter("Text delay has been turned ", 0); 
+    printTypewriter((TEXT_DELAY_ON) ? "on." : "off.", 2);
+}
+
+inline void lineCommand()
+{
+    LINE_SEPERAT_ON = !LINE_SEPERAT_ON;
+    printTypewriter("Line seperator has been turned ", 0); 
+    printTypewriter((LINE_SEPERAT_ON) ? "on." : "off.", 2);
+}
+
+inline void versionCommand()
+{
+    systemClear();
+    lineSeparator();
+    printTypewriter(APPLICATION_VERSION + " | " + APPLICATION_DATE_VERSION + " - Developed by Harrison L.", 1);
+    printTypewriter("Copyright (C) PromptShell Corporation. All rights reserved.", 2, 1, 1);
 }
