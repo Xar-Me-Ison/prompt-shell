@@ -39,7 +39,7 @@ std::string USER_LOGGED_DIRECTORY = "";
 std::string USER_GUEST_DIRECTORY = "";
 
 bool STATUS_EXIT_ON = false;
-bool LINE_SEPERAT_ON = false;
+bool LINE_SEPERATOR_ON = false;
 bool TEXT_DELAY_ON = false;
 bool ACCOUNT_CREATED_SUCCESSFULLY = false;
 
@@ -422,11 +422,11 @@ void promptShellUser::loggedIn()
             systemClear();
 			lineSeparator();
 			printTypewriter(APPLICATION_VERSION + " | " + APPLICATION_DATE_VERSION + " - Developed by Harrison L.  \033[1m<" + username + ">\033[0m", 1);
-			printTypewriter("Copyright (C) GNB Corporation. All rights reserved.", 2);
+			printTypewriter("Copyright (C) PromptShell Corporation. All rights reserved.", 2);
 		}
 		else if (command == "cls" || command == "clear" || command == "clean")
 		{
-			system("cls");
+			systemClear();
 		}
 		else if (command == "terminate" || command == "term" || command == "exit" || command == "quit") 
 		{
@@ -434,11 +434,9 @@ void promptShellUser::loggedIn()
 		}
 		else
 		{
-
 			printTypewriter("'" + input + "'" + " is not a recognized command.", 2); 
 		}
 	} while (LOGGED_IN);
-
 }
 /* -------------------------
 THREAD FUNCTIONS DEFINITIONS 
@@ -523,7 +521,7 @@ void promptShellLoginSignIn()
             }
             else
             {
-                printTypewriter("ERROR: Unable to create an account at this time.", 1);
+                printTypewriter("ERROR: Unable to create an account at this time.", 2);
                 continue;
             }
             
@@ -613,13 +611,12 @@ inline void systemClear()
     else
         system("clear");
 }
-
 inline void lineSeparator()
 {
     std::string LINE_SEPARATOR = 
 "---------------------------------------------------------------------------------";
 
-    if (LINE_SEPERAT_ON)
+    if (LINE_SEPERATOR_ON)
     {
         printTypewriter(LINE_SEPARATOR, 1, 1, 1);
     }
@@ -628,14 +625,13 @@ inline void lineSeparator()
 
     }
 }
-
 inline void helpCommand(bool flag)
 {
     if (flag)
     {
         printTypewriter("\nDELAY           Allow the user to turn the text delay ", 0, 5, 15); printTypewriter((!TEXT_DELAY_ON) ? "on." : "off.", 1, 5, 15);
-        printTypewriter("LINE            Allow the user to turn the line seperator ", 0, 5, 15); printTypewriter((!LINE_SEPERAT_ON) ? "on." : "off.", 1, 5, 15);
-        printTypewriter("CLEAR           Allow the user to clear up the terminnal.", 1, 5, 15);
+        printTypewriter("LINE            Allow the user to turn the line seperator ", 0, 5, 15); printTypewriter((!LINE_SEPERATOR_ON) ? "on." : "off.", 1, 5, 15);
+        printTypewriter("CLEAR           Allow the user to clear up the terminal.", 1, 5, 15);
         printTypewriter("LOGOUT          Allow the user to logout of their account.", 1, 5, 15);
         printTypewriter("VERSION         Allow the user to see the current running version.", 1, 5, 15);
         printTypewriter("TERMINATE       Allow the user to terminate the terminal application.", 2, 5, 15);
@@ -643,29 +639,26 @@ inline void helpCommand(bool flag)
     else
     {
         printTypewriter("\nDELAY           Allow the user to turn the text delay ", 0, 5, 15); printTypewriter((!TEXT_DELAY_ON) ? "on." : "off.", 1, 5, 15);
-        printTypewriter("LINE            Allow the user to turn the line seperator ", 0, 5, 15); printTypewriter((!LINE_SEPERAT_ON) ? "on." : "off.", 1, 5, 15);
-        printTypewriter("CLEAR           Allow the user to clear up the terminnal.", 1, 5, 15);
+        printTypewriter("LINE            Allow the user to turn the line seperator ", 0, 5, 15); printTypewriter((!LINE_SEPERATOR_ON) ? "on." : "off.", 1, 5, 15);
+        printTypewriter("CLEAR           Allow the user to clear up the terminal.", 1, 5, 15);
         printTypewriter("LOGIN           Allow the user to login onto their account.", 1, 5, 15);
         printTypewriter("SIGNUP          Allow the user to create their account.", 1, 5, 15);
         printTypewriter("VERSION         Allow the user to see the current running version.", 1, 5, 15);
         printTypewriter("TERMINATE       Allow the user to terminate the terminal application.", 2, 5, 15);
     }
 }
-
 inline void delayCommand()
 {
     TEXT_DELAY_ON = !TEXT_DELAY_ON;
     printTypewriter("Text delay has been turned ", 0); 
     printTypewriter((TEXT_DELAY_ON) ? "on." : "off.", 2);
 }
-
 inline void lineCommand()
 {
-    LINE_SEPERAT_ON = !LINE_SEPERAT_ON;
+    LINE_SEPERATOR_ON = !LINE_SEPERATOR_ON;
     printTypewriter("Line seperator has been turned ", 0); 
-    printTypewriter((LINE_SEPERAT_ON) ? "on." : "off.", 2);
+    printTypewriter((LINE_SEPERATOR_ON) ? "on." : "off.", 2);
 }
-
 inline void versionCommand()
 {
     systemClear();
