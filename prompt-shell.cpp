@@ -29,7 +29,7 @@ PREPROCESSOR DIRECTIVES
 /* -------------
 GLOBAL VARIABLES 
 ---------------- */
-std::string APPLICATION_VERSION = "[Version 0.4]";
+std::string APPLICATION_VERSION = "[Version 0.5]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -142,7 +142,7 @@ promptShellUser::promptShellUser()
 }
 promptShellUser::promptShellUser(int code) 
 {
-    std::string input;
+    std::cout << std::endl;
 
     if (validateUser())
     {
@@ -303,71 +303,74 @@ std::string promptShellUser::getPassword()
 /* Invoked by the overloaded constructor */
 bool promptShellUser::validateUser()
 {
-    std::ifstream username_infile(".database/.usernames.txt");
-    std::fstream user_filename;
-    std::string usrname, passwd;
-    std::string usr_line, pwd_line;
-    std::string data_line;
-    bool validated = false;
-    int line_num = 1;
+std::ifstream username_infile(".database/.usernames.txt");
+	std::fstream user_filename;
+	std::string usrname, passwd;
+	std::string usr_line, pwd_line;
+	std::string data_line;
+	std::string data;
+	bool validated = false;
+	int line_number = 1;
+	
+	
+	// In case of a file error ..
+	if (!username_infile) { return 0; }
 
-    // In the case of a file error ..
-    if (!username_infile) { return 0; }
+	printTypewriter("Username: ", 0); getline(std::cin, usrname);
+	
+	while(std::getline(username_infile, usr_line))
+	{
+		if (usr_line.find(usrname) != std::string::npos || true)
+		{
+			printTypewriter("Password: ", 0); passwd = getPassword();
+			// Here you will look for the corresponding user file and validate the password
+			
+			// Look in the corresponding userdata file ..
+			user_filename.open(".userdata/" + usrname + ".txt");
 
-    printTypewriter("Username: ", 0); getline(std::cin, usrname);
+			// In case of a file error ..
+			if (!user_filename) { return 0; }
 
-    while (std::getline(username_infile, usr_line))
-    {
-        if (usr_line.find(usrname) != std::string::npos || true)
-        {
-            passwd = getPassword();
+			while (std::getline(user_filename, pwd_line) && passwd.size() >= 1)
+			{
+				if (line_number == 2 && pwd_line.compare(passwd) == 0)
+				{
+					validated = true;
+					user_filename.close();
+					break;
+				}	
+				line_number++;
+			}
 
-            user_filename.open(".userdata/" + usrname + ".txt");
+			break;
+		}
+	}
 
-            // In the case of a file error ..
-            if (!user_filename) { return 0; }
+	if (validated)
+	{
+		// Assign usernames and so on by reading from the file
+		user_filename.open(".userdata/" + usrname + ".txt");
+		line_number = 1;
 
-            while (std::getline(user_filename, pwd_line) && passwd.size() >= 1)
-            {
-                if (line_num == 2 && pwd_line.compare(passwd) == 0)
-                {
-                    validated = true;
-                    user_filename.close();
-                    break;
-                }
-                line_num++;
-            }
+		while (std::getline(user_filename, data_line))
+		{
+			switch (line_number)
+			{
+				case 1:
+					username = data_line;
+					break;
+				case 2:
+					password = data_line;
+					break;
+			}
+			line_number++;
+		}
+	}
 
-            break;
-        }
+	username_infile.close();
+	
 
-        if (validated)
-        {
-            user_filename.open(".userdata/" + usrname + ".txt");
-            line_num = 1;
-
-            while (std::getline(user_filename, data_line))
-            {
-                switch (line_num)
-                {
-                    case 1:
-                        username = data_line;
-                        break;
-                    case 2:
-                        password = data_line;
-                        break;
-                    // case 3: 
-                    //     email = data_line;
-                    //     break;
-                }
-                line_num++;
-            }
-        }
-    }
-
-    username_infile.close();
-
-    return validated;
+	return validated; 
 }
 
 void promptShellUser::loggedIn()
@@ -402,9 +405,9 @@ systemClear();
 		{
 			printTypewriter("\nDELAY           Allow the user to turn the text delay ", 0, 5, 15); printTypewriter((!TEXT_DELAY_ON) ? "on." : "off.", 1, 5, 15);
             printTypewriter("CLEAR           Allow the user to clear up the terminnal.", 1, 5, 15);
-			printTypewriter("LOGOUT          Allows the logged in user to logout of their account.", 1, 5, 15);
-			printTypewriter("EXIT            Allows the logged in user to exit from the application.", 2, 5, 15);
-            printTypewriter("VERSION         Allows the logged in user to see the current running version.", 1, 5, 15);
+			printTypewriter("LOGOUT          Allow the user to logout of their account.", 1, 5, 15);
+            printTypewriter("VERSION         Allow the user to see the current running version.", 1, 5, 15);
+            printTypewriter("TERMINATE       Allow the user to terminate the terminal application.", 2, 5, 15);
 			
 		}
 		else if (input == "delay") 
@@ -430,7 +433,7 @@ systemClear();
 		{
 			system("cls");
 		}
-		else if (input == "exit" || input == "quit")
+		else if (input == "terminate" || input == "term" || input == "exit" || input == "quit") 
 		{
 			return;
 		}
@@ -482,12 +485,12 @@ void promptShellLoginSignIn()
 
         if (input == "help")
         {
-            // printTypewriter("Guest user's commands. For full functionality please login, or sign up.", 1, 5, 15);
             printTypewriter("\nDELAY           Allow the user to turn the text delay ", 0, 5, 15); printTypewriter((!TEXT_DELAY_ON) ? "on." : "off.", 1, 5, 15);
             printTypewriter("CLEAR           Allow the user to clear up the terminnal.", 1, 5, 15);
             printTypewriter("LOGIN           Allow the user to login onto their account.", 1, 5, 15);
             printTypewriter("SIGNUP          Allow the user to create their account.", 1, 5, 15);
-            printTypewriter("VERSION         Allow the user to see the current running version.", 2, 5, 15);
+            printTypewriter("VERSION         Allow the user to see the current running version.", 1, 5, 15);
+            printTypewriter("TERMINATE       Allow the user to terminate the terminal application.", 2, 5, 15);
             
 
         }
@@ -534,7 +537,7 @@ void promptShellLoginSignIn()
             printTypewriter("\n" + APPLICATION_VERSION + " | " + APPLICATION_DATE_VERSION + " - Developed by Harrison L.", 1);
             printTypewriter("Copyright (C) PromptShell Corporation. All rights reserved.", 2, 1, 1);
         }
-        else if (input == "exit" || input == "quit") 
+        else if (input == "terminate" || input == "term" || input == "exit" || input == "quit") 
         {
             STATUS_EXIT_ON = true;
             return;
