@@ -29,7 +29,7 @@ PREPROCESSOR DIRECTIVES
 /* -------------
 GLOBAL VARIABLES 
 ---------------- */
-std::string APPLICATION_VERSION = "[Version 0.6]";
+std::string APPLICATION_VERSION = "[Version 0.7]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -124,13 +124,13 @@ promptShellUser::promptShellUser()
 
     if (ACCOUNT_CREATED_SUCCESSFULLY)
     {
-        printTypewriter("\nSUCCESS: Your account has been created successfully, you can now log in.", 20, 30);
+        printTypewriter("\nSUCCESS: Your account has been created successfully, you can now log in.", 2, 20, 30);
         createUserData();
     }
-    else 
-    {
-        validateUser();
-    }
+    // else 
+    // {
+    //     validateUser();
+    // }
 
 }
 promptShellUser::promptShellUser(int code) 
@@ -426,7 +426,7 @@ void promptShellUser::loggedIn()
 		{
             systemClear();
 			lineSeparator();
-			printTypewriter("\n" + APPLICATION_VERSION + " | " + APPLICATION_DATE_VERSION + " - Developed by Harrison L.  \033[1m<" + username + ">\033[0m", 1);
+			printTypewriter(APPLICATION_VERSION + " | " + APPLICATION_DATE_VERSION + " - Developed by Harrison L.  \033[1m<" + username + ">\033[0m", 1);
 			printTypewriter("Copyright (C) GNB Corporation. All rights reserved.", 2);
 		}
 		else if (input == "cls" || input == "clear" || input == "clean")
