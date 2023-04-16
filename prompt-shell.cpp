@@ -16,6 +16,7 @@
 #include <vector>
 #include <unistd.h>  
 #include <Windows.h>
+#include <sys/stat.h>
 
 /* --------------------
 PREPROCESSOR DIRECTIVES
@@ -27,7 +28,6 @@ PREPROCESSOR DIRECTIVES
 #define OS_NAME "Mac OS"
 #elif defined(__linux__)
 #define OS_NAME "Linux"
-#include <sys/stat.h>
 #else
 #define OS_NAME "Unknown"
 #endif
@@ -35,7 +35,7 @@ PREPROCESSOR DIRECTIVES
 /* -------------
 GLOBAL VARIABLES 
 ---------------- */
-std::string APPLICATION_VERSION = "[Version 1.0]";
+std::string APPLICATION_VERSION = "[Version 1.1]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -43,8 +43,9 @@ std::string USER_LOGGED_DIRECTORY = "";
 std::string USER_GUEST_DIRECTORY = "";
 
 bool STATUS_EXIT_ON = false;
-bool LINE_SEPERATOR_ON = false;
 bool TEXT_DELAY_ON = false;
+bool LINE_SEPERATOR_ON = false;
+bool DIRECTORY_SHOW_ON = false;
 bool ACCOUNT_CREATED_SUCCESSFULLY = false;
 
 
@@ -103,6 +104,7 @@ void cdCommand(const std::vector<std::string>& arguments);
 void lsCommand(const std::vector<std::string>& arguments);
 void pwdCommand(const std::vector<std::string>& arguments);
 void rmCommand(const std::string& file_path);
+void rmdirCommand(const std::string& dir_path);
 void mkdirCommand(const std::string& dir_path);
 void touchCommand(const std::string& file_path);
 void echoCommand(const std::string& text);
@@ -116,6 +118,7 @@ inline void lineSeparator();
 inline void helpCommand(bool flag);
 inline void delayCommand();
 inline void lineCommand();
+inline void drCommand();
 inline void versionCommand();
 
 int main()
@@ -180,7 +183,6 @@ void promptShellUser::createUsername()
 
     username = input;
 }
-
 void promptShellUser::createPassword() 
 { 
     std::string input1, input2;
@@ -228,7 +230,6 @@ void promptShellUser::createPassword()
     } while (!password_match);
     
 }
-
 void promptShellUser::createUserData()
 {
     const char* path_userdata = ".userdata"; 
@@ -260,7 +261,6 @@ void promptShellUser::createUserData()
     // outfile << email << std::endl;
     outfile.close();
 }
-
 bool promptShellUser::isUsernameAvailable(std::string usrname)
 {
    	std::ifstream infile(".database/.usernames.txt");
@@ -390,11 +390,18 @@ void promptShellUser::loggedIn()
 
 	do 
 	{
-        // To update the 'USER_LOGGED_DIRECTORY' beforehand ..
-        updateDirectory(); 
+        if (DIRECTORY_SHOW_ON)
+        {
+            // To update the 'USER_LOGGED_DIRECTORY' beforehand ..
+            updateDirectory(); 
 
-		// CL-interface for the logged in user..
-		printTypewriter(USER_LOGGED_DIRECTORY + "> ", 0); 
+            // CL-interface for the logged in user..
+            printTypewriter(USER_LOGGED_DIRECTORY + "> ", 0); 
+        }
+        else
+        {
+            printTypewriter("> ", 0); 
+        }
 
 		// Getting the logged in user's input..
 		getline(std::cin, input);
@@ -426,6 +433,10 @@ void promptShellUser::loggedIn()
         {
             lineCommand();
         }
+        else if (command == "dr")
+        {
+            drCommand();
+        }
         else if (command == "cls" || command == "clear" || command == "clean")
 		{
 			systemClear();
@@ -445,6 +456,10 @@ void promptShellUser::loggedIn()
         else if (command == "rm")
         {
             rmCommand(tokens[1]);
+        }
+        else if (command == "rmdir")
+        {
+            rmdirCommand(tokens[1]);
         }
         else if (command == "mkdir")
         {
@@ -505,11 +520,18 @@ void promptShellLoginSignIn()
 
     do
     {
-        // To update the 'USER_GUEST_DIRECTORY' beforehand ..
-        updateDirectory(); 
+        if (DIRECTORY_SHOW_ON)
+        {
+            // To update the 'USER_LOGGED_DIRECTORY' beforehand ..
+            updateDirectory(); 
 
-        // CL-interface for the default user..
-        printTypewriter(USER_GUEST_DIRECTORY + "> ", 0);
+            // CL-interface for the logged in user..
+            printTypewriter(USER_LOGGED_DIRECTORY + "> ", 0); 
+        }
+        else
+        {
+            printTypewriter("> ", 0); 
+        }
 
         // Getting the user's input..
         std::getline(std::cin, input);
@@ -541,6 +563,10 @@ void promptShellLoginSignIn()
         {
             lineCommand();
         }
+        else if (command == "dr")
+        {
+            drCommand();
+        }
         else if (command == "cls" || command == "clear" || command == "clean")
 		{
 			systemClear();
@@ -560,6 +586,10 @@ void promptShellLoginSignIn()
         else if (command == "rm")
         {
             rmCommand(tokens[1]);
+        }
+        else if (command == "rmdir")
+        {
+            rmdirCommand(tokens[1]);
         }
         else if (command == "mkdir")
         {
@@ -700,6 +730,7 @@ void lsCommand(const std::vector<std::string>& arguments)
         {
             printTypewriter(entry->d_name, 1, 5, 10);
         }
+        std::cout << std::endl;
         closedir(dir);
     }
     else
@@ -732,11 +763,57 @@ void rmCommand(const std::string& file_path)
 {
     if (remove(file_path.c_str()) == 0)
     {
-        printTypewriter("Removed file: " + file_path, 2, 5, 10);
+        printTypewriter("Removed file: ;" + file_path + "'.", 2, 5, 10);
     }
     else
     {
         printTypewriter("ERROR: Failed to remove file '" + file_path + "'.", 2, 5, 10);
+    }
+}
+void rmdirCommand(const std::string& dir_path)
+{
+    DIR* dir = opendir(dir_path.c_str());
+    if (dir == nullptr) 
+    { 
+        printTypewriter("ERROR: Failed to open directory '" + dir_path + "'.", 2, 5, 10);
+    }
+
+    dirent* entry;
+    while((entry = readdir(dir)) != nullptr)
+    {
+        std::string entry_name = entry->d_name;
+        std::string entry_path = dir_path + "/" + entry_name;
+
+        struct stat file_stat;
+        if (stat(entry_path.c_str(), &file_stat) == -1) 
+        { 
+            // std::cerr << "Error: Failed to get file status: " << entry_path << std::endl; continue; 
+        }
+
+        if (S_ISDIR(file_stat.st_mode))
+        {
+            if (entry_name != "." && entry_name != "..")
+            {
+                rmdirCommand(entry_path); // Recursively remove subdirectories
+            }
+            else
+            {
+                if (unlink(entry_path.c_str()) == -1) 
+                { 
+                    // std::cerr << "Error: Failed to remove file: " << entry_path << std::endl; 
+                }
+            }
+        }
+    }
+    closedir(dir);
+
+    if (rmdir(dir_path.c_str()) == -1) 
+    {
+        printTypewriter("ERROR: Failed to remove directory '" + dir_path + "'.", 2, 5, 10);
+    }
+    else
+    {
+        printTypewriter("Removed directory: '" + dir_path + "'.", 2, 5, 10);
     }
 }
 void mkdirCommand(const std::string& dir_path)
@@ -800,7 +877,7 @@ inline void lineSeparator()
     }
     else 
     {
-
+        // Print nothing ..
     }
 }
 inline void helpCommand(bool flag)
@@ -808,12 +885,14 @@ inline void helpCommand(bool flag)
     printTypewriter("\n\033[1mSETTINGS\033[0m", 1, 5, 15);
     printTypewriter("    DELAY           Allow the user to turn the text delay ", 0, 5, 15); printTypewriter((!TEXT_DELAY_ON) ? "on." : "off.", 1, 5, 15);
     printTypewriter("    LINE            Allow the user to turn the line seperator ", 0, 5, 15); printTypewriter((!LINE_SEPERATOR_ON) ? "on." : "off.", 1, 5, 15);
+    printTypewriter("    DR              Allow the user to show the current directory ", 0, 5, 15); printTypewriter((!DIRECTORY_SHOW_ON) ? "on." : "off.", 1, 5, 15);
     printTypewriter("\n\033[1mCOMMANDS\033[0m", 1, 5, 15);
     printTypewriter("    CLS             Allow the user to clear up the terminal.", 1, 5, 15);
     printTypewriter("    CD              Allow the user to change directories.", 1, 5, 15);
     printTypewriter("    LS              Allow the user to list the current directory contents.", 1, 5, 15);
     printTypewriter("    PWD             Allow the user to print the working directory.", 1, 5, 15);
-    printTypewriter("    RM              Allow the user to remove files and directories.", 1, 5, 15);
+    printTypewriter("    RM              Allow the user to remove files within directories.", 1, 5, 15);
+    printTypewriter("    RMDIR           Allow the user to remove directories that also contain files.", 1, 5, 15);
     printTypewriter("    MKDIR           Allow the user to create directories.", 1, 5, 15);
     printTypewriter("    TOUCH           Allow the user to create empty files.", 1, 5, 15);
     printTypewriter("    ECHO            Allow the user to print text to the terminal.", 1, 5, 15);
@@ -842,6 +921,12 @@ inline void lineCommand()
     LINE_SEPERATOR_ON = !LINE_SEPERATOR_ON;
     printTypewriter("Line seperator has been turned ", 0); 
     printTypewriter((LINE_SEPERATOR_ON) ? "on." : "off.", 2);
+}
+inline void drCommand()
+{
+    DIRECTORY_SHOW_ON = !DIRECTORY_SHOW_ON;
+    printTypewriter("Show directory has been turned ", 0); 
+    printTypewriter((DIRECTORY_SHOW_ON) ? "on." : "off.", 2);
 }
 inline void versionCommand()
 {
