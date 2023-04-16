@@ -35,7 +35,7 @@ PREPROCESSOR DIRECTIVES
 /* -------------
 GLOBAL VARIABLES 
 ---------------- */
-std::string APPLICATION_VERSION = "[Version 1.2]";
+std::string APPLICATION_VERSION = "[Version 1.3]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -106,7 +106,7 @@ void pwdCommand(const std::vector<std::string>& arguments);
 void rmCommand(const std::vector<std::string>& file_names);
 void rmdirCommand(const std::vector<std::string>& dir_names);
 void mkdirCommand(const std::vector<std::string>& dir_names);
-void touchCommand(const std::string& file_path);
+void touchCommand(const std::vector<std::string>& file_names);
 void echoCommand(const std::vector<std::string>& texts);
 void catCommand(const std::vector<std::string>& file_names);
 void updateDirectory();
@@ -474,7 +474,8 @@ void promptShellUser::loggedIn()
         }
         else if (command == "touch")
         {
-            touchCommand(tokens[1]);
+            tokens.erase(tokens.begin());
+            touchCommand(tokens);
         }
         else if (command == "echo")
         {
@@ -618,7 +619,8 @@ void promptShellLoginSignIn()
         }
         else if (command == "touch")
         {
-            touchCommand(tokens[1]);
+            tokens.erase(tokens.begin());
+            touchCommand(tokens);
         }
         else if (command == "echo")
         {
@@ -793,6 +795,8 @@ void pwdCommand(const std::vector<std::string>& arguments)
 }
 void rmCommand(const std::vector<std::string>& file_names)
 {
+    if (file_names.empty()) { printTypewriter("Usage: rm <filename(s)>", 2, 5, 10); return; }
+
     for (const std::string& file_name : file_names)
     {
         if (remove(file_name.c_str()) != 0)
@@ -808,6 +812,8 @@ void rmCommand(const std::vector<std::string>& file_names)
 }
 void rmdirCommand(const std::vector<std::string>& dir_names)
 {
+    if (dir_names.empty()) { printTypewriter("Usage: rmdir <directory>", 2, 5, 10); return; }
+
    for (const std::string& dir_name : dir_names)
    {
         if (rmdir(dir_name.c_str()) != 0)
@@ -823,6 +829,8 @@ void rmdirCommand(const std::vector<std::string>& dir_names)
 }
 void mkdirCommand(const std::vector<std::string>& dir_names)
 {
+    if (dir_names.empty()) { printTypewriter("Usage: mkdir <directory>", 2, 5, 10); return; }
+
     for (const std::string& dir_name : dir_names)
     {
         if (mkdir(dir_name.c_str()) != 0)
@@ -836,20 +844,28 @@ void mkdirCommand(const std::vector<std::string>& dir_names)
     }
     std::cout << std::endl;
 }
-void touchCommand(const std::string& file_path)
+void touchCommand(const std::vector<std::string>& file_names)
 {
-    std::ofstream file(file_path);
-    if (file.good())
+    if (file_names.empty()) { printTypewriter("Usage: touch <filename(s)>", 2, 5, 10); return; }
+    
+    for (const auto& file_name : file_names)
     {
-        printTypewriter("Created file: '" + file_path + "'.", 2, 5, 10);
+        std::ofstream file(file_name);
+        if (!file.is_open())
+        {
+            printTypewriter("ERROR: Failed to create file '" + file_name + "'.", 1, 5, 10);
+        }
+        else
+        {
+            printTypewriter("Created file '" + file_name + "'.", 1, 5, 10);
+        }
     }
-    else
-    {
-        printTypewriter("ERROR: Failed to create file '" + file_path + "'.", 2, 5, 10);
-    }
+    std::cout << std::endl;
 }
 void echoCommand(const std::vector<std::string>& texts)
 {
+    if (texts.empty()) { printTypewriter("Usage: echo <filename(s)>", 2, 5, 10); return; }
+
     for (const std::string& text : texts)
     {
         printTypewriter(text + " ", 0, 5, 10);
@@ -858,12 +874,7 @@ void echoCommand(const std::vector<std::string>& texts)
 }
 void catCommand(const std::vector<std::string>& file_names)
 {
-
-    if (file_names.size() < 1)
-    {
-        printTypewriter("Usage: cat <filenames>", 2, 5, 10);
-        return;
-    }
+    if (file_names.size() < 1) { printTypewriter("Usage: cat <filename(s)>", 2, 5, 10); return; }
 
     for (const std::string& file_name : file_names)
     {
@@ -937,8 +948,8 @@ inline void helpCommand(bool flag)
     printTypewriter("    CD              Allow the user to change the current working directory.", 1, 0, 10);
     printTypewriter("    LS              Allow the user to list the current directory contents.", 1, 0, 10);
     printTypewriter("    PWD             Allow the user to print the working directory.", 1, 0, 10);
-    printTypewriter("    RM              Allow the user to remove files within directories.", 1, 0, 10);
-    printTypewriter("    RMDIR           Allow the user to remove directories that also contain files.", 1, 0, 10);
+    printTypewriter("    RM              Allow the user to remove files within a directory.", 1, 0, 10);
+    printTypewriter("    RMDIR           Allow the user to remove directories.", 1, 0, 10);
     printTypewriter("    MKDIR           Allow the user to create directories.", 1, 0, 10);
     printTypewriter("    TOUCH           Allow the user to create empty files.", 1, 0, 10);
     printTypewriter("    ECHO            Allow the user to print text to the terminal.", 1, 0, 10);
