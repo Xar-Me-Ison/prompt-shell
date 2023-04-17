@@ -35,7 +35,7 @@ PREPROCESSOR DIRECTIVES
 /* -------------
 GLOBAL VARIABLES 
 ---------------- */
-std::string APPLICATION_VERSION = "[Version 1.6]";
+std::string APPLICATION_VERSION = "[Version 1.7]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -94,6 +94,7 @@ THREAD FUNCTIONS DECLARATIONS
 ----------------------------- */
 void promptShellIntroduction();
 void promptShellLoginSignIn();
+void promptShellIntroduction(std::string);
 
 /* ------------------
 FUNCTION DECLARATIONS 
@@ -143,7 +144,7 @@ promptShellUser::promptShellUser()
 
     if (ACCOUNT_CREATED_SUCCESSFULLY)
     {
-        printTypewriter("\nSUCCESS: Your account has been created successfully, you can now log in.", 2, 20, 30);
+        printTypewriter("\n\033[1mSUCCESS: Your account has been created successfully, you can now login.\033[0m", 2, 20, 30);
         createUserData();
     }
 }
@@ -379,17 +380,13 @@ bool promptShellUser::validateUser()
 
 void promptShellUser::loggedIn()
 {
-    systemClear();
-    lineSeparator();
-    printTypewriter("PromptShell - Terminal Application " + APPLICATION_VERSION + "  \033[1m<" + username + ">\033[0m" , 1, 1, 1);
-    printTypewriter("Copyright (C) PromptShell Corporation. All rights reserved.", 2, 1, 1);
-    printTypewriter("Install the latest PromptShell for new features and improvements! https://bit.ly/3mvnEc2", 2, 1, 1);
-
     std::string input;
     std::string command;
     std::istringstream iss;
     std::vector<std::string> tokens;
 
+    promptShellIntroduction(username);
+    
 	do 
 	{
         if (DIRECTORY_SHOW_ON)
@@ -427,6 +424,10 @@ void promptShellUser::loggedIn()
 		{   
             helpCommand(true);
 		}
+        else if (command == "ps")
+        {
+            promptShellIntroduction(username);
+        }
 		else if (command == "delay") 
 		{
 			delayCommand();
@@ -567,10 +568,14 @@ void promptShellLoginSignIn()
             continue;
 
         command = tokens[0];
-
+    
         if (command == "help")
         {
             helpCommand(false);
+        }
+        else if (command == "ps")
+        {
+            promptShellIntroduction();
         }
         else if (command == "delay") 
 		{
@@ -674,6 +679,14 @@ void promptShellLoginSignIn()
             printTypewriter("'" + input + "'" + " is not a recognized command.", 2);
         }
     } while (true);
+}
+void promptShellIntroduction(std::string username)
+{
+    systemClear();
+    lineSeparator();
+    printTypewriter("PromptShell - Terminal Application " + APPLICATION_VERSION + "  \033[1m<" + username + ">\033[0m" , 1, 1, 1);
+    printTypewriter("Copyright (C) PromptShell Corporation. All rights reserved.", 2, 1, 1);
+    printTypewriter("Install the latest PromptShell for new features and improvements! https://bit.ly/3mvnEc2", 2, 1, 1);
 }
 
 /* -----------------
@@ -969,6 +982,7 @@ inline void helpCommand(bool flag)
     printTypewriter("    DR              Allow the user to show the current directory ", 0, 0, 10); printTypewriter((!DIRECTORY_SHOW_ON) ? "on." : "off.", 1, 0, 10);
     printTypewriter("\n\033[1mCOMMANDS\033[0m", 1, 0, 10);
     printTypewriter("    CLS             Allow the user to clear up the terminal.", 1, 0, 10);
+    printTypewriter("    PS              Allow the user to reset the terminal.", 1, 0, 10);
     printTypewriter("    CD              Allow the user to change the current working directory.", 1, 0, 10);
     printTypewriter("    LS              Allow the user to list the current directory contents.", 1, 0, 10);
     printTypewriter("    PWD             Allow the user to print the working directory.", 1, 0, 10);
