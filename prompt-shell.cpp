@@ -35,7 +35,7 @@ PREPROCESSOR DIRECTIVES
 /* -------------
 GLOBAL VARIABLES 
 ---------------- */
-std::string APPLICATION_VERSION = "[Version 1.4]";
+std::string APPLICATION_VERSION = "[Version 1.5]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -109,6 +109,7 @@ void mkdirCommand(const std::vector<std::string>& dir_names);
 void touchCommand(const std::vector<std::string>& file_names);
 void echoCommand(const std::vector<std::string>& texts);
 void catCommand(const std::vector<std::string>& file_names);
+void gitCommand(const std::vector<std::string>& arguments);
 void updateDirectory();
 
 /* -------------------------
@@ -624,6 +625,11 @@ void promptShellLoginSignIn()
             tokens.erase(tokens.begin());   // Remove the first element which is the command "cat" itself ..
             catCommand(tokens);
         }
+        else if (command == "git")
+        {
+            tokens.erase(tokens.begin());   // Remove the first element which is the command "git" itself ..
+            gitCommand(tokens);
+        }
         else if (command == "log" || command == "login")
         {
             user_ptr = new promptShellUser(69);
@@ -890,6 +896,29 @@ void catCommand(const std::vector<std::string>& file_names)
     
     std::cout << std::endl;
 }
+void gitCommand(const std::vector<std::string>& arguments)
+{
+    if (arguments.size() < 1) { printTypewriter("\033[1mUsage: git <command(s)>\033[0m", 2, 5, 10); return; }
+    
+    std::string git_command = "git";
+    for (const std::string& argument : arguments)
+    {
+        git_command += " " + argument;
+    }
+
+    int result = system(git_command.c_str());
+
+    if (result == 0)
+    {
+        printTypewriter("\033[1mGit command executed successfully.\033[0m", 1, 5, 10);
+    }
+    else
+    {
+        printTypewriter("\033[1mERROR: Git command exited with status '" + std::to_string(result) + "'.\033[0m", 1, 5, 10);
+    }
+
+    std::cout << std::endl;
+}
 void updateDirectory()
 {
     // Solely to update the 'USER_GUEST_DIRECTORY' & 'USER_LOGGED_DIRECTORY' ..
@@ -944,6 +973,7 @@ inline void helpCommand(bool flag)
     printTypewriter("    TOUCH           Allow the user to create empty files.", 1, 0, 10);
     printTypewriter("    ECHO            Allow the user to print text to the terminal.", 1, 0, 10);
     printTypewriter("    CAT             Allow the user to print the contents of a file to the terminal.", 1, 0, 10);
+    printTypewriter("    GIT             Allow the user to use git functionality from the terminal.", 1, 0, 10);
     printTypewriter("\n\033[1mFUNCTIONS\033[0m", 1, 0, 10);
     if (flag) 
     {
