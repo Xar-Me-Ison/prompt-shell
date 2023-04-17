@@ -35,7 +35,7 @@ PREPROCESSOR DIRECTIVES
 /* -------------
 GLOBAL VARIABLES 
 ---------------- */
-std::string APPLICATION_VERSION = "[Version 1.5]";
+std::string APPLICATION_VERSION = "[Version 1.6]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -484,6 +484,11 @@ void promptShellUser::loggedIn()
         {
             tokens.erase(tokens.begin());   // Remove the first element which is the command "cat" itself ..
             catCommand(tokens);
+        }
+        else if (command == "git")
+        {
+            tokens.erase(tokens.begin());   // Remove the first element which is the command "git" itself ..
+            gitCommand(tokens);
         }
 		else if (command == "logout" || command == "signout")	
 		{
