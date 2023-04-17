@@ -35,7 +35,7 @@ PREPROCESSOR DIRECTIVES
 /* -------------
 GLOBAL VARIABLES 
 ---------------- */
-std::string APPLICATION_VERSION = "[Version 1.3]";
+std::string APPLICATION_VERSION = "[Version 1.4]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -456,37 +456,32 @@ void promptShellUser::loggedIn()
         }
         else if (command == "rm")
         {
-            // Remove the first element which is the command "rm" itself ..
-            tokens.erase(tokens.begin());
+            tokens.erase(tokens.begin());   // Remove the first element which is the command "rm" itself ..
             rmCommand(tokens);
         }
         else if (command == "rmdir")
         {
-            //  Remove the first element which is the command "rmdir" itself ..
-            tokens.erase(tokens.begin());
+            tokens.erase(tokens.begin());   //  Remove the first element which is the command "rmdir" itself ..
             rmdirCommand(tokens);
         }
         else if (command == "mkdir")
         {
-            //  Remove the first element which is the command "mkdir" itself ..
-            tokens.erase(tokens.begin());
+            tokens.erase(tokens.begin());   //  Remove the first element which is the command "mkdir" itself ..
             mkdirCommand(tokens);
         }
         else if (command == "touch")
         {
-            tokens.erase(tokens.begin());
+            tokens.erase(tokens.begin());   // Remove the first element which is the command "touch" itself ..
             touchCommand(tokens);
         }
         else if (command == "echo")
         {
-            // Remove the first element which is the command "echo" itself ..
-            tokens.erase(tokens.begin());
+            tokens.erase(tokens.begin());   // Remove the first element which is the command "echo" itself ..
             echoCommand(tokens);
         }
         else if (command == "cat")
         {
-            // Remove the first element which is the command "cat" itself ..
-            tokens.erase(tokens.begin());
+            tokens.erase(tokens.begin());   // Remove the first element which is the command "cat" itself ..
             catCommand(tokens);
         }
 		else if (command == "logout" || command == "signout")	
@@ -601,37 +596,32 @@ void promptShellLoginSignIn()
         }
         else if (command == "rm")
         {
-            // Remove the first element which is the command "rm" itself ..
-            tokens.erase(tokens.begin());
+            tokens.erase(tokens.begin());   // Remove the first element which is the command "rm" itself ..
             rmCommand(tokens);
         }
         else if (command == "rmdir")
         {
-            //  Remove the first element which is the command "rmdir" itself ..
-            tokens.erase(tokens.begin());
+            tokens.erase(tokens.begin());   //  Remove the first element which is the command "rmdir" itself ..
             rmdirCommand(tokens);
         }
         else if (command == "mkdir")
         {
-            //  Remove the first element which is the command "mkdir" itself ..
-            tokens.erase(tokens.begin());
+            tokens.erase(tokens.begin());   //  Remove the first element which is the command "mkdir" itself ..
             mkdirCommand(tokens);
         }
         else if (command == "touch")
         {
-            tokens.erase(tokens.begin());
+            tokens.erase(tokens.begin());   // Remove the first element which is the command "touch" itself ..
             touchCommand(tokens);
         }
         else if (command == "echo")
         {
-            // Remove the first element which is the command "echo" itself ..
-            tokens.erase(tokens.begin());
+            tokens.erase(tokens.begin());   // Remove the first element which is the command "echo" itself ..
             echoCommand(tokens);
         }
         else if (command == "cat")
         {
-            // Remove the first element which is the command "cat" itself ..
-            tokens.erase(tokens.begin());
+            tokens.erase(tokens.begin());   // Remove the first element which is the command "cat" itself ..
             catCommand(tokens);
         }
         else if (command == "log" || command == "login")
@@ -730,20 +720,20 @@ void cdCommand(const std::vector<std::string>& arguments)
 {
     if (arguments.size() < 2)
     {
-        printTypewriter("Usage: cd <directory>", 2, 5, 10);
+        printTypewriter("\033[1mUsage: cd <directory>\033[0m", 2, 5, 10);
     }
     else
     {
         if (chdir(arguments[1].c_str()) == 0)
         {
             if (!DIRECTORY_SHOW_ON && arguments[1] != "." && arguments[1] != "..")
-                printTypewriter("Directory changed to '" + arguments[1] + "'.", 2, 5, 10);
+                printTypewriter("\033[1mDirectory changed to '" + arguments[1] + "'.\033[0m", 2, 5, 10);
             else
                 std::cout << std::endl;
         }
         else
         {
-            printTypewriter("Directory not found: " + arguments[1], 1, 5, 10);
+            printTypewriter("\033[1mDirectory not found: " + arguments[1] + "'.\033[1m", 1, 5, 10);
         }
     }
 }
@@ -751,7 +741,7 @@ void lsCommand(const std::vector<std::string>& arguments)
 {
     if (arguments.size() > 1)
     {
-        printTypewriter("Usage: ls", 2, 5, 10);
+        printTypewriter("\033[1mUsage: ls\033[0m", 2, 5, 10);
         return;
     }
 
@@ -777,7 +767,7 @@ void pwdCommand(const std::vector<std::string>& arguments)
 {
     if (arguments.size() > 1)
     {
-        printTypewriter("Usage: pwd", 2, 5, 10);
+        printTypewriter("\033[1mUsage: pwd\033[0m", 2, 5, 10);
         return;
     }
 
@@ -790,81 +780,81 @@ void pwdCommand(const std::vector<std::string>& arguments)
     }
     else
     {
-        std::cerr << "Failed to get current working directory" << std::endl;
+        std::cerr << "\033[1mFailed to get current working directory\033[0m" << std::endl;
     }
 }
 void rmCommand(const std::vector<std::string>& file_names)
 {
-    if (file_names.empty()) { printTypewriter("Usage: rm <filename(s)>", 2, 5, 10); return; }
+    if (file_names.empty()) { printTypewriter("\033[1mUsage: rm <filename(s)>\033[0m", 2, 5, 10); return; }
 
     for (const std::string& file_name : file_names)
     {
         if (remove(file_name.c_str()) != 0)
         {
-            printTypewriter("ERROR: Failed to remove file '" + file_name + "'.", 1, 5, 10);
+            printTypewriter("\033[1mERROR: Failed to remove file '" + file_name + "'.\033[0m", 1, 5, 10);
         }
         else
         {
-            printTypewriter("Removed file '" + file_name + "'.", 1, 5, 10);
+            printTypewriter("\033[1mRemoved file '" + file_name + "'.\033[0m", 1, 5, 10);
         }
     }
     std::cout << std::endl;
 }
 void rmdirCommand(const std::vector<std::string>& dir_names)
 {
-    if (dir_names.empty()) { printTypewriter("Usage: rmdir <directory>", 2, 5, 10); return; }
+    if (dir_names.empty()) { printTypewriter("\033[1mUsage: rmdir <directory>\033[0m", 2, 5, 10); return; }
 
    for (const std::string& dir_name : dir_names)
    {
         if (rmdir(dir_name.c_str()) != 0)
         {
-            printTypewriter("ERROR: Failed to remove directory '" + dir_name+ "'.", 1, 5, 10);
+            printTypewriter("\033[1mERROR: Failed to remove directory '" + dir_name+ "'.\033[0m", 1, 5, 10);
         }
         else
         {
-            printTypewriter("Removed directory '" + dir_name + "'.", 1, 5, 10);
+            printTypewriter("\033[1mRemoved directory '" + dir_name + "'.\033[0m", 1, 5, 10);
         }
    }
    std::cout << std::endl;
 }
 void mkdirCommand(const std::vector<std::string>& dir_names)
 {
-    if (dir_names.empty()) { printTypewriter("Usage: mkdir <directory>", 2, 5, 10); return; }
+    if (dir_names.empty()) { printTypewriter("\033[1mUsage: mkdir <directory>\033[0m", 2, 5, 10); return; }
 
     for (const std::string& dir_name : dir_names)
     {
         if (mkdir(dir_name.c_str()) != 0)
         {
-            printTypewriter("ERROR: Failed to create directory'" + dir_name + "'.", 1, 5, 10);
+            printTypewriter("\033[1mERROR: Failed to create directory'" + dir_name + "'.\033[0m", 1, 5, 10);
         }
         else
         {
-            printTypewriter("Created directory '" + dir_name + "'.", 1, 5, 10);
+            printTypewriter("\033[1mCreated directory '" + dir_name + "'.\033[0m", 1, 5, 10);
         }
     }
     std::cout << std::endl;
 }
 void touchCommand(const std::vector<std::string>& file_names)
 {
-    if (file_names.empty()) { printTypewriter("Usage: touch <filename(s)>", 2, 5, 10); return; }
+    if (file_names.empty()) { printTypewriter("\033[1mUsage: touch <filename(s)>\033[0m", 2, 5, 10); return; }
     
     for (const auto& file_name : file_names)
     {
         std::ofstream file(file_name);
         if (!file.is_open())
         {
-            printTypewriter("ERROR: Failed to create file '" + file_name + "'.", 1, 5, 10);
+            printTypewriter("\033[1mERROR: Failed to create file '" + file_name + "'.\033[0m", 1, 5, 10);
         }
         else
         {
-            printTypewriter("Created file '" + file_name + "'.", 1, 5, 10);
+            printTypewriter("\033[1mCreated file '" + file_name + "'.\033[0m", 1, 5, 10);
         }
     }
     std::cout << std::endl;
 }
 void echoCommand(const std::vector<std::string>& texts)
 {
-    if (texts.empty()) { printTypewriter("Usage: echo <filename(s)>", 2, 5, 10); return; }
+    if (texts.empty()) { printTypewriter("\033[1mUsage: echo <text>\033[0m", 2, 5, 10); return; }
 
     for (const std::string& text : texts)
     {
@@ -874,7 +864,7 @@ void echoCommand(const std::vector<std::string>& texts)
 }
 void catCommand(const std::vector<std::string>& file_names)
 {
-    if (file_names.size() < 1) { printTypewriter("Usage: cat <filename(s)>", 2, 5, 10); return; }
+    if (file_names.size() < 1) { printTypewriter("\033[1mUsage: cat <filename(s)>\033[0m", 2, 5, 10); return; }
 
     for (const std::string& file_name : file_names)
     {
@@ -882,18 +872,18 @@ void catCommand(const std::vector<std::string>& file_names)
 
         if (!file.is_open())
         {
-            printTypewriter("ERROR: Failed to open file '" + file_name + "'.", 1, 5, 10);
+            printTypewriter("\033[1mERROR: Failed to open file '" + file_name + "'.\033[0m", 1, 5, 10);
             continue;
         }
 
-        printTypewriter("\n\033[1m=== Contents of " + file_name + " \033[0m===", 1, 5, 10);
+        printTypewriter("\n\033[1m=== Contents of " + file_name + " ===\033[1m", 1, 5, 10);
 
         std::string line;
         while (std::getline(file, line))
         {
             printTypewriter(line, 1, 5, 10);
         }
-        printTypewriter("\033[1m=== Contents of " + file_name + " \033[0m===", 1, 5, 10);
+        printTypewriter("\033[1m=== Contents of " + file_name + " ===\033[0m", 1, 5, 10);
 
         file.close();
     }
