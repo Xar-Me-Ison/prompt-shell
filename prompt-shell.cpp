@@ -35,7 +35,7 @@ PREPROCESSOR DIRECTIVES
 /* -------------
 GLOBAL VARIABLES 
 ---------------- */
-std::string APPLICATION_VERSION = "[Version 1.7]";
+std::string APPLICATION_VERSION = "[Version 1.8]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -102,6 +102,8 @@ FUNCTION DECLARATIONS
 void printStatic(std::string text, int newline);
 void printTypewriter(std::string text, int newline, int low_delay = 10, int high_delay = 20);
 void cdCommand(const std::vector<std::string>& arguments);
+void mvCommand(const std::vector<std::string>& arguments);
+void cpCommand(const std::vector<std::string>& arguments);
 void lsCommand(const std::vector<std::string>& arguments);
 void pwdCommand(const std::vector<std::string>& arguments);
 void rmCommand(const std::vector<std::string>& file_names);
@@ -111,6 +113,7 @@ void touchCommand(const std::vector<std::string>& file_names);
 void echoCommand(const std::vector<std::string>& texts);
 void catCommand(const std::vector<std::string>& file_names);
 void gitCommand(const std::vector<std::string>& arguments);
+void wingetCommand(const std::vector<std::string>& arguments);
 void updateDirectory();
 
 /* -------------------------
@@ -123,6 +126,7 @@ inline void delayCommand();
 inline void lineCommand();
 inline void dirCommand();
 inline void versionCommand();
+inline void versionCommand(std::string);
 
 int main()
 {
@@ -448,6 +452,14 @@ void promptShellUser::loggedIn()
         {
             cdCommand(tokens);
         }
+        else if (command == "mv")
+        {
+            mvCommand(tokens);
+        }
+        else if (command == "cp")
+        {
+            cpCommand(tokens);
+        }
         else if (command == "ls")
         {
             lsCommand(tokens);
@@ -491,18 +503,29 @@ void promptShellUser::loggedIn()
             tokens.erase(tokens.begin());   // Remove the first element which is the command "git" itself ..
             gitCommand(tokens);
         }
+        else if (command == "winget")
+        {
+            tokens.erase(tokens.begin());   // Remove the first element which is the command "winget" itself ..
+            wingetCommand(tokens);
+        }
 		else if (command == "logout" || command == "signout")	
 		{
 			printTypewriter("\nSUCCESS: You have been logged out as \033[1m" + username + "\033[0m.", 1, 30, 40);
             promptShellIntroduction();
 			return;
 		}
+        else if (command == "log" || command == "login")
+        {
+            printTypewriter("ERROR: You are already logged in as \033[1m" + username + "\033[0m.", 2, 30, 40);
+        }
+        else if (command == "sign" || command == "signup")
+        {
+            printTypewriter("ERROR: To sign up, you must first logout.", 2, 30, 40);
+        }
+
 		else if (command == "version" || command == "ver")
 		{
-            systemClear();
-			lineSeparator();
-			printTypewriter(APPLICATION_VERSION + " | " + APPLICATION_DATE_VERSION + " - Developed by Harrison L.  \033[1m<" + username + ">\033[0m", 1);
-			printTypewriter("Copyright (C) PromptShell Corporation. All rights reserved.", 2);
+            versionCommand(username);
 		}
 		else if (command == "terminate" || command == "term" || command == "exit" || command == "quit") 
 		{
@@ -597,6 +620,14 @@ void promptShellLoginSignIn()
         {
             cdCommand(tokens);
         }
+        else if (command == "mv")
+        {
+            mvCommand(tokens);
+        }
+        else if (command == "cp")
+        {
+            cpCommand(tokens);
+        }
         else if (command == "ls")
         {
             lsCommand(tokens);
@@ -640,13 +671,18 @@ void promptShellLoginSignIn()
             tokens.erase(tokens.begin());   // Remove the first element which is the command "git" itself ..
             gitCommand(tokens);
         }
+        else if (command == "winget")
+        {
+            tokens.erase(tokens.begin());   // Remove the first element which is the command "winget" itself ..
+            wingetCommand(tokens);
+        }
         else if (command == "log" || command == "login")
         {
             user_ptr = new promptShellUser(69);
 
             if (user_ptr == nullptr)
             {
-                printTypewriter("\nERROR: Unable to login at the moment.", 1);
+                printTypewriter("\033[1mERROR: Unable to login at the moment.\033[0m", 1);
                 continue;
             }
 
@@ -660,7 +696,7 @@ void promptShellLoginSignIn()
             }
             else
             {
-                printTypewriter("ERROR: Unable to create an account at this time.", 2);
+                printTypewriter("\033[1mERROR: Unable to create an account at this time.\033[0m", 2);
                 continue;
             }
             
@@ -671,8 +707,7 @@ void promptShellLoginSignIn()
         }
         else if (command == "terminate" || command == "term" || command == "exit" || input == "quit") 
         {
-            STATUS_EXIT_ON = true;
-            return;
+            STATUS_EXIT_ON = true; return;
         }
         else 
         {
@@ -760,6 +795,60 @@ void cdCommand(const std::vector<std::string>& arguments)
             printTypewriter("\033[1mDirectory not found: " + arguments[1] + "'.\033[1m", 1, 5, 10);
         }
     }
+}
+void mvCommand(const std::vector<std::string>& arguments)
+{
+    if (arguments.size() != 3)
+    {
+        printTypewriter("\033[1mUsage: mv <source_file> <destination_file>\033[0m", 2, 5, 10);
+        return;
+    }
+
+    // Extract source and destination file paths from arguments ..
+    const std::string& source_file = arguments[1];
+    const std::string& destination_file = arguments[2];
+
+    // Move file using system call ..
+    int result = std::rename(source_file.c_str(), destination_file.c_str());
+
+    // Check if move operation succeeded ..
+    if (result == 0)
+    {
+        printTypewriter("File moved: '" + source_file + "' -> '" + destination_file + "'.", 2, 5, 10);
+    }
+    else 
+    {
+        printTypewriter("Failed to move file: '" + source_file + "' -> '" + destination_file + ".", 2, 5, 10);
+    }
+}
+void cpCommand(const std::vector<std::string>& arguments)
+{
+    if (arguments.size() != 3)
+    {
+        printTypewriter("\033[1mUsage: cp <source_file> <destination_file>\033[0m", 2, 5, 10);
+        return;
+    }
+
+    // Extract source and destination file paths from arguments ..
+    const std::string source_file = arguments[1];
+    const std::string destination_file = arguments[2];
+
+    // Open source file for binary input ..
+    std::ifstream src(source_file, std::ios::binary);
+    if (!src.is_open()) { printTypewriter("Failed to open source file '" + source_file + "'.", 2, 5, 10); return; }
+
+    // Open destination file for binary output ..
+    std::ofstream dest(destination_file, std::ios::binary);
+    if (!dest.is_open()) { printTypewriter("Failed to open destination file '" + destination_file + "'.", 2, 5, 10); src.close(); return; }
+
+    // Copy contents from source to destination ..
+    dest << src.rdbuf();
+
+    // Close file streams ..
+    src.close();
+    dest.close();
+
+    printTypewriter("File copied: '" + source_file + "' -> '" + destination_file + "'.", 2, 5, 10);
 }
 void lsCommand(const std::vector<std::string>& arguments)
 {
@@ -900,7 +989,7 @@ void catCommand(const std::vector<std::string>& file_names)
             continue;
         }
 
-        printTypewriter("\n\033[1m=== Contents of " + file_name + " ===\033[1m", 1, 5, 10);
+        printTypewriter("\n\033[1m=== Contents of " + file_name + " ===\033[0m", 1, 5, 10);
 
         std::string line;
         while (std::getline(file, line))
@@ -933,6 +1022,28 @@ void gitCommand(const std::vector<std::string>& arguments)
     else
     {
         printTypewriter("\033[1mERROR: Git command exited with status '" + std::to_string(result) + "'.\033[0m", 1, 5, 10);
+    }
+
+    std::cout << std::endl;
+}
+void wingetCommand(const std::vector<std::string>& arguments)
+{
+    if (arguments.size() < 1) { printTypewriter("\033[1mUsage: winget <command(s)>\033[0m", 2, 5, 10); return; }
+
+    std::string winget_command = "winget";
+        for (const std::string& argument : arguments)
+    {
+        winget_command += " " + argument;
+    }
+
+    int result = system(winget_command.c_str());
+    if (result == 0)
+    {
+        printTypewriter("\033[1mwinget command executed successfully.\033[0m", 1, 5, 10);
+    }
+    else
+    {
+        printTypewriter("\033[1mERROR: Winget command exited with status '" + std::to_string(result) + "'.\033[0m", 1, 5, 10);
     }
 
     std::cout << std::endl;
@@ -983,6 +1094,8 @@ inline void helpCommand(bool flag)
     printTypewriter("\n\033[1mCOMMANDS\033[0m", 1, 0, 10);
     printTypewriter("    CLS             Allow the user to clear up the terminal.", 1, 0, 10);
     printTypewriter("    PS              Allow the user to reset the terminal.", 1, 0, 10);
+    printTypewriter("    MV              Allow the user to move files from one directory to another.", 1, 0, 10);
+    printTypewriter("    CP              Allow the user to copy files from one directory to another.", 1, 0, 10);
     printTypewriter("    CD              Allow the user to change the current working directory.", 1, 0, 10);
     printTypewriter("    LS              Allow the user to list the current directory contents.", 1, 0, 10);
     printTypewriter("    PWD             Allow the user to print the working directory.", 1, 0, 10);
@@ -993,11 +1106,11 @@ inline void helpCommand(bool flag)
     printTypewriter("    ECHO            Allow the user to print text to the terminal.", 1, 0, 10);
     printTypewriter("    CAT             Allow the user to print the contents of a file to the terminal.", 1, 0, 10);
     printTypewriter("    GIT             Allow the user to use git functionality from the terminal.", 1, 0, 10);
+    printTypewriter("    WINGET          Allow the user to use the Windows Package Manager from the terminal.", 1, 0, 10);
     printTypewriter("\n\033[1mFUNCTIONS\033[0m", 1, 0, 10);
     if (flag) 
     {
     printTypewriter("    LOGOUT          Allow the user to logout out of their account.", 1, 0, 10);
-    printTypewriter("    INFETCH         Allow the user to see their system information.", 1, 0, 10);
     }
     else
     {
@@ -1031,4 +1144,11 @@ inline void versionCommand()
     lineSeparator();
     printTypewriter(APPLICATION_VERSION + " | " + APPLICATION_DATE_VERSION + " - Developed by Harrison L.", 1);
     printTypewriter("Copyright (C) PromptShell Corporation. All rights reserved.", 2, 1, 1);
+}
+inline void versionCommand(std::string username)
+{
+    systemClear();
+    lineSeparator();
+    printTypewriter(APPLICATION_VERSION + " | " + APPLICATION_DATE_VERSION + " - Developed by Harrison L.  \033[1m<" + username + ">\033[0m", 1);
+    printTypewriter("Copyright (C) PromptShell Corporation. All rights reserved.", 2);
 }
