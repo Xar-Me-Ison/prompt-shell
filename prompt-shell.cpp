@@ -4,7 +4,6 @@
 
 #include <ctime>
 #include <cstdlib>
-#include <conio.h>
 
 #include <iostream>
 #include <iterator>
@@ -21,6 +20,7 @@ PREPROCESSOR DIRECTIVES
 #ifdef _WIN32
 #define OS_NAME "Windows"
 #include <direct.h>
+#include <conio.h>
 #include <Windows.h>
 #define mkdir _mkdir
 #elif defined(__APPLE__)
