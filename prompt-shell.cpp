@@ -26,6 +26,8 @@ PREPROCESSOR DIRECTIVES
 #elif defined(__APPLE__)
 #define OS_NAME "Mac OS"
 #elif defined(__linux__)
+#include <ncurses.h>
+#define getch wgetch
 #define OS_NAME "Linux"
 #else
 #define OS_NAME "Unknown"
@@ -35,7 +37,7 @@ PREPROCESSOR DIRECTIVES
 GLOBAL VARIABLES 
 ---------------- */
 std::string OS = OS_NAME;
-std::string APPLICATION_VERSION = "[Version 2.1]";
+std::string APPLICATION_VERSION = "[Version 2.2]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
