@@ -1,6 +1,5 @@
 #include <algorithm>
 
-#include <direct.h>
 #include <dirent.h>
 
 #include <ctime>
@@ -14,7 +13,6 @@
 
 #include <vector>
 #include <unistd.h>  
-#include <Windows.h>
 #include <sys/stat.h>
 
 /* --------------------
@@ -22,6 +20,8 @@ PREPROCESSOR DIRECTIVES
 ----------------------- */
 #ifdef _WIN32
 #define OS_NAME "Windows"
+#include <direct.h>
+#include <Windows.h>
 #define mkdir _mkdir
 #elif defined(__APPLE__)
 #define OS_NAME "Mac OS"
@@ -35,7 +35,7 @@ PREPROCESSOR DIRECTIVES
 GLOBAL VARIABLES 
 ---------------- */
 std::string OS = OS_NAME;
-std::string APPLICATION_VERSION = "[Version 2.0]";
+std::string APPLICATION_VERSION = "[Version 2.1]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
