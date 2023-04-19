@@ -1,7 +1,5 @@
 #include <algorithm>
-
 #include <dirent.h>
-
 #include <ctime>
 #include <cstdlib>
 
@@ -37,7 +35,7 @@ PREPROCESSOR DIRECTIVES
 GLOBAL VARIABLES 
 ---------------- */
 std::string OS = OS_NAME;
-std::string APPLICATION_VERSION = "[Version 2.3]";
+std::string APPLICATION_VERSION = "[Version 1.9]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
