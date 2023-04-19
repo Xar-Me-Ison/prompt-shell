@@ -11,7 +11,6 @@
 #include <iterator>
 #include <sstream>
 #include <fstream>
-#include <filesystem>
 
 #include <vector>
 #include <unistd.h>  
@@ -35,13 +34,15 @@ PREPROCESSOR DIRECTIVES
 /* -------------
 GLOBAL VARIABLES 
 ---------------- */
-std::string APPLICATION_VERSION = "[Version 1.9]";
+std::string OS = OS_NAME;
+std::string APPLICATION_VERSION = "[Version 2.0]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
 std::string USER_LOGGED_DIRECTORY = "";
 std::string USER_GUEST_DIRECTORY = "";
 
+bool PS_MERGE_ON = false;
 bool STATUS_EXIT_ON = false;
 bool USER_LOGGED_IN = false;
 bool TEXT_DELAY_ON = false;
@@ -105,6 +106,7 @@ void echoCommand(const std::vector<std::string>& texts);
 void catCommand(const std::vector<std::string>& file_names);
 void gitCommand(const std::vector<std::string>& arguments);
 void wingetCommand(const std::vector<std::string>& arguments);
+void psmergeCommand(const std::vector<std::string>& arguments);
 void updateDirectory();
 
 /* -------------------------
@@ -116,6 +118,7 @@ inline void helpCommand(bool flag);
 inline void delayCommand();
 inline void lineCommand();
 inline void dirCommand();
+inline void psmergCommand();
 inline void versionCommand();
 inline void versionCommand(std::string);
 
@@ -530,7 +533,7 @@ void promptShellLoginSignIn()
             tokens.erase(tokens.begin());   // Remove the first element which is the command "git" itself ..
             gitCommand(tokens);
         }
-        else if (command == "winget")
+        else if (command == "winget" && OS == "Windows")
         {
             tokens.erase(tokens.begin());   // Remove the first element which is the command "winget" itself ..
             wingetCommand(tokens);
@@ -574,6 +577,10 @@ void promptShellLoginSignIn()
                 if (user_ptr == nullptr) { printTypewriter("\033[1mERROR: Unable to create an account at this time.\033[0m", 2); }
             }
         }
+        else if (command == "psmerge" || command == "merge")
+        {
+            psmergCommand();
+        }
         else if (command == "version" || command == "ver")
         {
             if (USER_LOGGED_IN && user_ptr != nullptr)
@@ -590,7 +597,14 @@ void promptShellLoginSignIn()
         }
         else 
         {
-            printTypewriter("'" + input + "'" + " is not a recognized command.", 2);
+            if (PS_MERGE_ON)
+            {
+                psmergeCommand(tokens);
+            }
+            else
+            {
+                printTypewriter("'" + input + "'" + " is not a recognized command.", 2);
+            }
         }
     } while (true);
 }
@@ -920,9 +934,32 @@ void wingetCommand(const std::vector<std::string>& arguments)
     {
         printTypewriter("\033[1mwinget command executed successfully.\033[0m", 1, 5, 10);
     }
-    else
+    else    
     {
-        printTypewriter("\033[1mERROR: Winget command exited with status '" + std::to_string(result) + "'.\033[0m", 1, 5, 10);
+        printTypewriter("\033[1mERROR: winget command exited with status '" + std::to_string(result) + "'.\033[0m", 1, 5, 10);
+    }
+
+    std::cout << std::endl;
+}
+void psmergeCommand(const std::vector<std::string>& arguments)
+{
+    if (arguments.size() < 1) { return; }
+
+    std::string _command = "";
+    for (const std::string& argument : arguments)
+    {
+        _command += argument + " ";
+    }
+
+    int result = system(_command.c_str());
+    
+    if (result == 0)
+    {
+        printTypewriter("\033[1m'" + arguments[0] + "' command executed successfully.\033[0m", 1, 5, 10);
+    }
+    else    
+    {
+        printTypewriter("\033[1mERROR: '" + arguments[0] + "' command exited with status '" + std::to_string(result) + "'.\033[0m", 1, 5, 10);
     }
 
     std::cout << std::endl;
@@ -985,7 +1022,10 @@ inline void helpCommand(bool flag)
     printTypewriter("    ECHO            Allow the user to print text to the terminal.", 1, 0, 10);
     printTypewriter("    CAT             Allow the user to print the contents of a file to the terminal.", 1, 0, 10);
     printTypewriter("    GIT             Allow the user to use git functionality from the terminal.", 1, 0, 10);
+    if (OS == "Windows")
+    {
     printTypewriter("    WINGET          Allow the user to use the Windows Package Manager from the terminal.", 1, 0, 10);
+    }
     printTypewriter("\n\033[1mFUNCTIONS\033[0m", 1, 0, 10);
     if (flag) 
     {
@@ -996,26 +1036,33 @@ inline void helpCommand(bool flag)
     printTypewriter("    LOGIN           Allow the user to login onto their account.", 1, 0, 10);
     printTypewriter("    SIGNUP          Allow the user to create their account.", 1, 0, 10);
     }
+    printTypewriter("    PSMERGE         Allow the user to use commands that are recognized PowerShell. ", 1, 0, 10);
     printTypewriter("    VERSION         Allow the user to see the current running version.", 1, 0, 10);
     printTypewriter("    TERMINATE       Allow the user to terminate the terminal application.", 2, 0, 10);
 }
 inline void delayCommand()
 {
     TEXT_DELAY_ON = !TEXT_DELAY_ON;
-    printTypewriter("Text delay has been turned ", 0); 
-    printTypewriter((TEXT_DELAY_ON) ? "on." : "off.", 2);
+    printTypewriter("\033[1mText delay has been turned ", 0); 
+    printTypewriter((TEXT_DELAY_ON) ? "on.\033[0m" : "off.\033[0m", 2);
 }
 inline void lineCommand()
 {
     LINE_SEPERATOR_ON = !LINE_SEPERATOR_ON;
-    printTypewriter("Line seperator has been turned ", 0); 
-    printTypewriter((LINE_SEPERATOR_ON) ? "on." : "off.", 2);
+    printTypewriter("\033[1mLine seperator has been turned ", 0); 
+    printTypewriter((LINE_SEPERATOR_ON) ? "on.\033[0m" : "off.\033[0m", 2);
 }
 inline void dirCommand()
 {
     DIRECTORY_SHOW_ON = !DIRECTORY_SHOW_ON;
-    printTypewriter("Show directory has been turned ", 0); 
-    printTypewriter((DIRECTORY_SHOW_ON) ? "on." : "off.", 2);
+    printTypewriter("\033[1mShow directory has been turned ", 0); 
+    printTypewriter((DIRECTORY_SHOW_ON) ? "on.\033[0m" : "off.\033[0m", 2);
+}
+inline void psmergCommand()
+{
+    PS_MERGE_ON = !PS_MERGE_ON;
+    printTypewriter("\033[1mPowerShell and PromptShell merge has been turned ", 0); 
+    printTypewriter((PS_MERGE_ON) ? "on.\033[0m" : "off.\033[0m", 2);
 }
 inline void versionCommand()
 {
