@@ -26,9 +26,9 @@ PREPROCESSOR DIRECTIVES
 #elif defined(__APPLE__)
 #define OS_NAME "Mac OS"
 #elif defined(__linux__)
+#define OS_NAME "Linux"
 #include <ncurses.h>
 #define getch wgetch
-#define OS_NAME "Linux"
 #else
 #define OS_NAME "Unknown"
 #endif
