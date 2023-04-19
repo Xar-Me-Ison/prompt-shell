@@ -35,7 +35,7 @@ PREPROCESSOR DIRECTIVES
 /* -------------
 GLOBAL VARIABLES 
 ---------------- */
-std::string APPLICATION_VERSION = "[Version 1.8]";
+std::string APPLICATION_VERSION = "[Version 1.9]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -43,20 +43,11 @@ std::string USER_LOGGED_DIRECTORY = "";
 std::string USER_GUEST_DIRECTORY = "";
 
 bool STATUS_EXIT_ON = false;
+bool USER_LOGGED_IN = false;
 bool TEXT_DELAY_ON = false;
 bool LINE_SEPERATOR_ON = false;
 bool DIRECTORY_SHOW_ON = false;
 bool ACCOUNT_CREATED_SUCCESSFULLY = false;
-
-
-/* ---------------
-USER-DEFINED TYPES 
------------------- */
-enum TT_Input
-{
-	BACKSPACE = 8,
-	RETURN = 32
-};
 
 /* ---------------
 CLASS DECLARATIONS 
@@ -68,19 +59,19 @@ public:
     promptShellUser(); // Default constructor, to sign up ..
     promptShellUser(int); // Overloaded constructor, to login ..
     ~promptShellUser();
+
+    std::string getterUsername();
 private:
     // Invoked by the default constuctor (signing up) .. 
     void createUsername();
     void createPassword();
     void createUserData();
     bool isUsernameAvailable(std::string);
-
-    std::string getPassword();
-
+    
+    std::string getPasswordFromUser();
+    
     // Invoked by the overloaded constructor (logging in) ..
     bool validateUser();
-    void loggedIn();
-
 	/* Class variables */
 public:
 private:
@@ -161,7 +152,9 @@ promptShellUser::promptShellUser(int code)
         printTypewriter("\nSUCCESS: You are now logged in as \033[1m" + username + "\033[0m.", 1, 30, 40);
 
         LOGGED_IN = true;
-        loggedIn();
+        USER_LOGGED_IN = true;
+        promptShellIntroduction(username);
+        return;
     }
     else
     {
@@ -174,6 +167,13 @@ promptShellUser::promptShellUser(int code)
 promptShellUser::~promptShellUser() 
 { 
     ACCOUNT_CREATED_SUCCESSFULLY = false;
+    USER_LOGGED_IN = false;
+    LOGGED_IN = false;
+}
+
+std::string promptShellUser::getterUsername()
+{
+    return username;
 }
 
 void promptShellUser::createUsername()
@@ -199,19 +199,19 @@ void promptShellUser::createPassword()
     do
     {
 
-        printTypewriter("Password: ", 0); input1 = getPassword();
+        printTypewriter("Password: ", 0); input1 = getPasswordFromUser();
         while (input1.size() <= 1)
         {
             printTypewriter("Weak password, try again.", 2);
-            printTypewriter("Password: ", 0); input1 = getPassword();
+            printTypewriter("Password: ", 0); input1 = getPasswordFromUser();
         }
 
-        printTypewriter("Retype password: ", 0); input2 = getPassword();
+        printTypewriter("Retype password: ", 0); input2 = getPasswordFromUser();
 
         while (input2.size() <= 1)
         {
             printTypewriter("Weak password, try again.", 2);
-            printTypewriter("Password: ", 0); input2 = getPassword();
+            printTypewriter("Password: ", 0); input2 = getPasswordFromUser();
         }
 
         if (input1 != input2)
@@ -286,7 +286,7 @@ bool promptShellUser::isUsernameAvailable(std::string usrname)
 	return true;
 }
 
-std::string promptShellUser::getPassword()
+std::string promptShellUser::getPasswordFromUser()
 {
 	std::string password;	
 	char input_ch;
@@ -331,7 +331,7 @@ bool promptShellUser::validateUser()
 	{
 		if (usr_line.find(usrname) != std::string::npos || true)
 		{
-			printTypewriter("Password: ", 0); passwd = getPassword();
+			printTypewriter("Password: ", 0); passwd = getPasswordFromUser();
 			// Here you will look for the corresponding user file and validate the password
 			
 			// Look in the corresponding userdata file ..
@@ -382,161 +382,6 @@ bool promptShellUser::validateUser()
 	return validated; 
 }
 
-void promptShellUser::loggedIn()
-{
-    std::string input;
-    std::string command;
-    std::istringstream iss;
-    std::vector<std::string> tokens;
-
-    promptShellIntroduction(username);
-    
-	do 
-	{
-        if (DIRECTORY_SHOW_ON)
-        {
-            // To update the 'USER_LOGGED_DIRECTORY' beforehand ..
-            updateDirectory(); 
-
-            // CL-interface for the logged in user..
-            printTypewriter(USER_LOGGED_DIRECTORY + "> ", 0); 
-        }
-        else
-        {
-            printTypewriter("> ", 0); 
-        }
-
-		// Getting the logged in user's input..
-		getline(std::cin, input);
-
-        iss.clear(); // Clear the state of istringstream ..
-        iss.str(input); // Set the string to parse in istringstream ..
-
-        tokens.clear(); // Clear the vector of tokens ..
-
-        // Split input into tokens 
-        tokens = {std::istream_iterator<std::string>{iss},
-              std::istream_iterator<std::string>{}};
-
-        // If the user's input is empty or whitespace, continue..
-        if (tokens.empty())
-            continue;
-
-        command = tokens[0];
-
-		if (command == "help")
-		{   
-            helpCommand(true);
-		}
-        else if (command == "ps")
-        {
-            promptShellIntroduction(username);
-        }
-		else if (command == "delay") 
-		{
-			delayCommand();
-		}
-        else if (command == "line")
-        {
-            lineCommand();
-        }
-        else if (command == "dr")
-        {
-            dirCommand();
-        }
-        else if (command == "cls" || command == "clear" || command == "clean")
-		{
-			systemClear();
-		}
-        else if (command == "cd")
-        {
-            cdCommand(tokens);
-        }
-        else if (command == "mv")
-        {
-            mvCommand(tokens);
-        }
-        else if (command == "cp")
-        {
-            cpCommand(tokens);
-        }
-        else if (command == "ls")
-        {
-            lsCommand(tokens);
-        }
-        else if (command == "pwd")
-        {
-            pwdCommand(tokens);
-        }
-        else if (command == "rm")
-        {
-            tokens.erase(tokens.begin());   // Remove the first element which is the command "rm" itself ..
-            rmCommand(tokens);
-        }
-        else if (command == "rmdir")
-        {
-            tokens.erase(tokens.begin());   //  Remove the first element which is the command "rmdir" itself ..
-            rmdirCommand(tokens);
-        }
-        else if (command == "mkdir")
-        {
-            tokens.erase(tokens.begin());   //  Remove the first element which is the command "mkdir" itself ..
-            mkdirCommand(tokens);
-        }
-        else if (command == "touch")
-        {
-            tokens.erase(tokens.begin());   // Remove the first element which is the command "touch" itself ..
-            touchCommand(tokens);
-        }
-        else if (command == "echo")
-        {
-            tokens.erase(tokens.begin());   // Remove the first element which is the command "echo" itself ..
-            echoCommand(tokens);
-        }
-        else if (command == "cat")
-        {
-            tokens.erase(tokens.begin());   // Remove the first element which is the command "cat" itself ..
-            catCommand(tokens);
-        }
-        else if (command == "git")
-        {
-            tokens.erase(tokens.begin());   // Remove the first element which is the command "git" itself ..
-            gitCommand(tokens);
-        }
-        else if (command == "winget")
-        {
-            tokens.erase(tokens.begin());   // Remove the first element which is the command "winget" itself ..
-            wingetCommand(tokens);
-        }
-		else if (command == "logout" || command == "signout")	
-		{
-			printTypewriter("\nSUCCESS: You have been logged out as \033[1m" + username + "\033[0m.", 1, 30, 40);
-            promptShellIntroduction();
-			return;
-		}
-        else if (command == "log" || command == "login")
-        {
-            printTypewriter("ERROR: You are already logged in as \033[1m" + username + "\033[0m.", 2, 30, 40);
-        }
-        else if (command == "sign" || command == "signup")
-        {
-            printTypewriter("ERROR: To sign up, you must first logout.", 2, 30, 40);
-        }
-
-		else if (command == "version" || command == "ver")
-		{
-            versionCommand(username);
-		}
-		else if (command == "terminate" || command == "term" || command == "exit" || command == "quit") 
-		{
-            exit(EXIT_SUCCESS);
-		}
-		else
-		{
-			printTypewriter("'" + input + "'" + " is not a recognized command.", 2); 
-		}
-	} while (LOGGED_IN);
-}
 /* -------------------------
 THREAD FUNCTIONS DEFINITIONS 
 ---------------------------- */
@@ -594,11 +439,25 @@ void promptShellLoginSignIn()
     
         if (command == "help")
         {
-            helpCommand(false);
+            if (USER_LOGGED_IN)
+            {
+                helpCommand(true);
+            }
+            else
+            {
+                helpCommand(false);
+            }
         }
         else if (command == "ps")
         {
-            promptShellIntroduction();
+            if (USER_LOGGED_IN)
+            {
+                promptShellIntroduction(user_ptr->getterUsername());
+            }
+            else
+            {
+                promptShellIntroduction();
+            }
         }
         else if (command == "delay") 
 		{
@@ -676,38 +535,58 @@ void promptShellLoginSignIn()
             tokens.erase(tokens.begin());   // Remove the first element which is the command "winget" itself ..
             wingetCommand(tokens);
         }
-        else if (command == "log" || command == "login")
+        else if (command == "logout" || command == "signout")
         {
-            user_ptr = new promptShellUser(69);
-
-            if (user_ptr == nullptr)
+            if (USER_LOGGED_IN && user_ptr != nullptr)
             {
-                printTypewriter("\033[1mERROR: Unable to login at the moment.\033[0m", 1);
-                continue;
+                printTypewriter("\nSUCCESS: You have been logged out as \033[1m" + user_ptr->getterUsername() + "\033[0m.", 1, 30, 40);
+                promptShellIntroduction();
+
+                delete user_ptr; user_ptr = nullptr;
             }
-
-            delete user_ptr; user_ptr = nullptr;
+            
+            printTypewriter("ERROR: To sign out, you must be first logged in.", 2, 30, 40);
+            
         }
-        else if (command == "sign" || command == "signup")
+        else if (command == "login" || command == "signin")
         {
-            if (user_ptr == nullptr)
+            if (USER_LOGGED_IN && user_ptr != nullptr)
             {
-                user_ptr = new promptShellUser;
+                printTypewriter("ERROR: You are already logged in as \033[1m" + user_ptr->getterUsername() + "\033[0m.", 2, 30, 40);
             }
             else
             {
-                printTypewriter("\033[1mERROR: Unable to create an account at this time.\033[0m", 2);
-                continue;
+                user_ptr = new promptShellUser(69);
+
+                if (user_ptr == nullptr) { printTypewriter("\033[1mERROR: Unable to login at the moment.\033[0m", 1); }
             }
-            
+        }
+        else if (command == "sign" || command == "signup")
+        {
+            if (USER_LOGGED_IN && user_ptr != nullptr)
+            {
+                printTypewriter("ERROR: To sign up, you must first logout.", 2, 30, 40);
+            }
+            else
+            {
+                user_ptr = new promptShellUser;
+
+                if (user_ptr == nullptr) { printTypewriter("\033[1mERROR: Unable to create an account at this time.\033[0m", 2); }
+            }
         }
         else if (command == "version" || command == "ver")
         {
+            if (USER_LOGGED_IN && user_ptr != nullptr)
+            {
+                versionCommand(user_ptr->getterUsername());
+                continue;
+            }
+            
             versionCommand();
         }
         else if (command == "terminate" || command == "term" || command == "exit" || input == "quit") 
         {
-            STATUS_EXIT_ON = true; return;
+            STATUS_EXIT_ON = true; exit(EXIT_SUCCESS);
         }
         else 
         {
