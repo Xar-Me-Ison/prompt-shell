@@ -33,7 +33,7 @@ PREPROCESSOR DIRECTIVES
 GLOBAL VARIABLES 
 ---------------- */
 std::string OS = OS_NAME;
-std::string APPLICATION_VERSION = "[Version 2.1]";
+std::string APPLICATION_VERSION = "[Version 2.2]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -380,7 +380,7 @@ bool promptShellUser::isUsernameAvailable(std::string usrname)
     std::string search_string = usrname;
 	std::string line;
 
-    if (!infile.is_open()) { printTypewriter("ERROR: Failed to open database file", 2); return false;} 
+    if (!infile.is_open()) { return true;} 
 
     std::regex regex("\\b" + search_string + "\\b");
 
