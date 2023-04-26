@@ -1,32 +1,30 @@
 #include <algorithm>
+#include <direct.h>
 #include <dirent.h>
 #include <ctime>
 #include <cstdlib>
+#include <conio.h>
 
 #include <iostream>
 #include <iterator>
 #include <sstream>
 #include <fstream>
 
+#include <regex>
 #include <vector>
 #include <unistd.h>  
 #include <sys/stat.h>
-
+#include <windows.h>
 /* --------------------
 PREPROCESSOR DIRECTIVES
 ----------------------- */
 #ifdef _WIN32
 #define OS_NAME "Windows"
-#include <direct.h>
-#include <conio.h>
-#include <Windows.h>
 #define mkdir _mkdir
 #elif defined(__APPLE__)
 #define OS_NAME "Mac OS"
 #elif defined(__linux__)
 #define OS_NAME "Linux"
-#include <ncurses.h>
-#define getch wgetch
 #else
 #define OS_NAME "Unknown"
 #endif
@@ -35,7 +33,7 @@ PREPROCESSOR DIRECTIVES
 GLOBAL VARIABLES 
 ---------------- */
 std::string OS = OS_NAME;
-std::string APPLICATION_VERSION = "[Version 1.9]";
+std::string APPLICATION_VERSION = "[Version 2.0]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -62,6 +60,10 @@ public:
     ~promptShellUser();
 
     std::string getterUsername();
+    
+    // Invoked by the user itself when changing username or password ..
+    void changeUsername();
+    void changePassword();
 private:
     // Invoked by the default constuctor (signing up) .. 
     void createUsername();
@@ -73,6 +75,11 @@ private:
     
     // Invoked by the overloaded constructor (logging in) ..
     bool validateUser();
+    
+    // Invoked by the 'changeUsername()' and 'changePassword()' ..
+    void changeUserData(std::string, std::string);
+    bool verifyUser();
+    
 	/* Class variables */
 public:
 private:
@@ -124,12 +131,14 @@ inline void versionCommand(std::string);
 
 int main()
 {
-    while (!STATUS_EXIT_ON)
+    if (OS != "Windows")
     {
-        promptShellIntroduction();
-        promptShellLoginSignIn();
+        printTypewriter("\033[1mPromptShell is not yet supported in " + OS + ".\033[0m", 1, 30, 40);
+        exit(EXIT_SUCCESS);
     }
-    
+
+    promptShellIntroduction();
+    promptShellLoginSignIn();
 }
 
 /* --------------
@@ -142,8 +151,8 @@ promptShellUser::promptShellUser()
 
     if (ACCOUNT_CREATED_SUCCESSFULLY)
     {
-        printTypewriter("\n\033[1mSUCCESS: Your account has been created successfully, you can now login.\033[0m", 2, 20, 30);
         createUserData();
+        printTypewriter("\033[1m<> Your account has been created successfully, you can now login.\033[0m", 2, 20, 30);
     }
 }
 promptShellUser::promptShellUser(int code) 
@@ -152,7 +161,7 @@ promptShellUser::promptShellUser(int code)
 
     if (validateUser())
     {
-        printTypewriter("\nSUCCESS: You are now logged in as \033[1m" + username + "\033[0m.", 1, 30, 40);
+        printTypewriter("\n<> You are now logged in as \033[1m" + username + "\033[0m.", 1, 30, 40);
 
         LOGGED_IN = true;
         USER_LOGGED_IN = true;
@@ -174,9 +183,98 @@ promptShellUser::~promptShellUser()
     LOGGED_IN = false;
 }
 
+/* Public methods */
 std::string promptShellUser::getterUsername()
 {
     return username;
+}
+void promptShellUser::changeUsername()
+{
+    std::string input;
+
+    // You will call the 'verifyUser()' function ..
+    printTypewriter("\033[1m<> First you have to verify yourself.\033[0m", 2); 
+    if (!verifyUser())
+    {
+        printTypewriter("\033[1mERROR: Verification failed, please try again later.\033[0m", 2);
+        return;
+    }
+
+    printTypewriter("\nNew Username: ", 0); getline(std::cin, input);
+
+    while ((input.size() > 60 || input.size() == 0 || !isUsernameAvailable(input)) && input != username)
+    {
+        if (input == username)
+        {
+            printTypewriter("Username can't be the same as before, please try again.", 2);
+            break;
+        }
+        printTypewriter("Username is taken, please try again.", 2);
+        printTypewriter("New Username: ", 0); getline(std::cin, input);
+    }
+
+    changeUserData(input, password);
+    printTypewriter("\033[1mUsername was changed sucessfully to '" + input + "'.\033[0m", 2, 30, 40);
+}
+void promptShellUser::changePassword()
+{
+    std::string input1, input2;
+    bool password_match;
+    int password_counter = 0;
+
+    // You will call the overloaded 'validateUser()' function ..
+    printTypewriter("\033[1m<> First you have to verify yourself.\033[0m", 2); 
+    if (!verifyUser())
+    {
+        printTypewriter("\033[1mERROR: Verification failed, please try again later.\033[0m", 2);
+        return;
+    }
+
+    do
+    {
+
+        printTypewriter("\nNew Password: ", 0); input1 = getPasswordFromUser();
+        while (input1.size() <= 1 && input1 != password)
+        {
+            if (input1 == password) 
+            {
+                printTypewriter("Password can't be the same as before, please try again.", 2);
+                continue;
+            }
+            printTypewriter("Weak password, try again.", 2);
+            printTypewriter("New Password: ", 0); input1 = getPasswordFromUser();
+        }
+
+        printTypewriter("Retype password: ", 0); input2 = getPasswordFromUser();
+
+        while (input2.size() <= 1)
+        {
+            printTypewriter("Weak password, try again.", 2);
+            printTypewriter("Retype Password: ", 0); input2 = getPasswordFromUser();
+        }
+
+        if (input1 != input2)
+        {
+            if (password_counter >= 2)
+            {
+                printTypewriter("\033[1mERROR: Too many attempts have been made, try again later.\033[0m", 2);
+                ACCOUNT_CREATED_SUCCESSFULLY = false;
+                break;
+            }
+            printTypewriter("\033[1mERROR: Password do not match.\033[0m", 2);
+            password_match = false;
+        }
+        else
+        {
+            ACCOUNT_CREATED_SUCCESSFULLY = true; password_match = true;
+            changeUserData(username, input1);
+
+            printTypewriter("\033[1mPassword was changed sucessfully.", 2, 30, 40);
+        }
+
+        password_counter++;
+    } while (!password_match);
+    
 }
 
 void promptShellUser::createUsername()
@@ -214,19 +312,18 @@ void promptShellUser::createPassword()
         while (input2.size() <= 1)
         {
             printTypewriter("Weak password, try again.", 2);
-            printTypewriter("Password: ", 0); input2 = getPasswordFromUser();
+            printTypewriter("Retype Password: ", 0); input2 = getPasswordFromUser();
         }
 
         if (input1 != input2)
         {
-            printTypewriter("\nERROR: Password do not match.", 2);
-
             if (password_counter >= 2)
             {
-                printTypewriter("\nERROR: Too many attempts have been made, try again.", 2);
+                printTypewriter("\033[1mERROR: Too many attempts have been made, try again.\033[0m", 2);
                 ACCOUNT_CREATED_SUCCESSFULLY = false;
                 break;
             }
+            printTypewriter("\033[1mERROR: Password do not match.\033[0m", 2);
             password_match = false;
         }
         else
@@ -250,12 +347,12 @@ void promptShellUser::createUserData()
 
     if (SetFileAttributes(path_userdata, FILE_ATTRIBUTE_HIDDEN) == 0) { std::cout << "Failed to hide directory" << std::endl; }
     if (SetFileAttributes(path_database, FILE_ATTRIBUTE_HIDDEN) == 0) { std::cout << "Failed to hide directory" << std::endl; }
- 
+    
     const char* fn_userdatabase = ".database/.usernames.txt";
     std::ofstream outputfile(fn_userdatabase, std::ios::app);
 
     // In the case of a file error ..
-    if (!outputfile) { std::cout << "Error creating file" << std::endl; }
+    if (!outputfile) { std::cout << "Error creating database file" << std::endl; }
     outputfile << username << std::endl;
     outputfile.close();
 
@@ -264,7 +361,7 @@ void promptShellUser::createUserData()
     std::ofstream outfile(fn_userdata);
 
     // In the case of a file error ..
-    if (!outfile) { std::cout << "Error creating file" << std::endl; }
+    if (!outfile) { std::cout << "Error creating user file" << std::endl; }
 
     outfile << username << std::endl;
     outfile << password << std::endl;
@@ -274,18 +371,24 @@ void promptShellUser::createUserData()
 bool promptShellUser::isUsernameAvailable(std::string usrname)
 {
    	std::ifstream infile(".database/.usernames.txt");
-	std::string search_string = usrname;
+    std::string search_string = usrname;
 	std::string line;
+
+    if (!infile.is_open()) { printTypewriter("ERROR: Failed to open database file", 2); return false;} 
+
+    std::regex regex("\\b" + search_string + "\\b");
 
 	while (std::getline(infile, line))
 	{
-		// If it's not available return false ..
-		if (line.find(search_string) != std::string::npos)
+		// If username is not available return false ..
+		if (std::regex_search(line, regex))
 		{
+            infile.close();
 			return false;
 		}
 	}
 
+    infile.close();
 	return true;
 }
 
@@ -320,7 +423,6 @@ bool promptShellUser::validateUser()
 	std::string usrname, passwd;
 	std::string usr_line, pwd_line;
 	std::string data_line;
-	std::string data;
 	bool validated = false;
 	int line_number = 1;
 	
@@ -384,6 +486,97 @@ bool promptShellUser::validateUser()
 
 	return validated; 
 }
+
+/* Invoked by the user when changing username or password */
+void promptShellUser::changeUserData(std::string usrname, std::string passwd)
+{
+    const char* path_userdata = ".userdata";
+    const char* path_database = ".database";
+
+    mkdir(path_userdata);
+    mkdir(path_database);
+
+    if (SetFileAttributes(path_userdata, FILE_ATTRIBUTE_HIDDEN) == 0) { std::cout << "Failed to hide directory" << std::endl; }
+    if (SetFileAttributes(path_database, FILE_ATTRIBUTE_HIDDEN) == 0) { std::cout << "Failed to hide directory" << std::endl; }
+
+
+    std::ifstream infile(".database/.usernames.txt");
+    // std::ofstream outfile(".database/temp.txt");
+    
+    std::string targetString;
+    std::string replacementString;
+
+    // if (usrname != username)
+    // {
+    //     targetString = username;
+    //     replacementString = usrname;
+    // }
+    // else
+    // {
+    //     targetString = password;
+    //     replacementString = passwd;
+    // }
+
+    std::string line;
+    std::regex regex("\\b" + username + "\\b");
+    while (std::getline(infile, line))
+    {
+        if (std::regex_search(line, regex))  
+            std::regex_replace(line, regex, usrname); 
+        // else if (std::regex_search(line, username))
+        //     continue;
+    }
+
+    infile.close();
+    // outfile.close();
+
+    std::remove(".database/.usernames.txt");
+    std::rename(".database/temp.txt", ".database/.usernames.txt");
+    
+    // std::rename((".database/" + username + ".txt").c_str(), (".database/" + usrname + ".txt").c_str());
+    
+    std::remove((".userdata/" + username + ".txt").c_str());
+    username = usrname;
+    password = passwd;
+    createUserData();
+}
+bool promptShellUser::verifyUser()
+{
+    std::fstream users_file((".userdata/" + username + ".txt").c_str());
+    std::string usrname, passwd;
+    std::string line;
+    int line_number = 0;
+    bool verified = false;
+
+    printTypewriter("Username: ", 0); getline(std::cin, usrname);
+    while (usrname != username)
+    {
+        if (line_number > 2)
+        {
+            return verified;
+        }
+        printTypewriter("\033[1mERROR: Credentials mismatch, please try again.\033[0m", 2);
+        printTypewriter("Username: ", 0); getline(std::cin, usrname);
+        line_number++;
+    }
+    line_number = 0;
+    printTypewriter("Password: ", 0); passwd = getPasswordFromUser();
+
+    while(std::getline(users_file, line))
+    {
+        if (line_number == 0 && line == usrname)
+        {
+            line_number++;
+        }
+        else if (line_number == 1 && line == passwd)
+        {
+            verified = true;
+        }
+    }
+
+    return verified;
+}
+
 
 /* -------------------------
 THREAD FUNCTIONS DEFINITIONS 
@@ -542,14 +735,37 @@ void promptShellLoginSignIn()
         {
             if (USER_LOGGED_IN && user_ptr != nullptr)
             {
-                printTypewriter("\nSUCCESS: You have been logged out as \033[1m" + user_ptr->getterUsername() + "\033[0m.", 1, 30, 40);
+                printTypewriter("\nYou have now been logged out as \033[1m" + user_ptr->getterUsername() + "\033[0m.", 1, 30, 40);
                 promptShellIntroduction();
 
                 delete user_ptr; user_ptr = nullptr;
             }
-            
-            printTypewriter("ERROR: To sign out, you must be first logged in.", 2, 30, 40);
-            
+            else
+            {
+                printTypewriter("ERROR: To sign out, you must be first logged in.", 2, 30, 40);
+            }            
+        }
+        else if (command == "chguser" || command == "changeuser" || command == "changeusername")
+        {
+            if (!USER_LOGGED_IN && user_ptr == nullptr)
+            {
+                printTypewriter("ERROR: To change username, you must first be logged in.", 2, 30, 40);
+            }
+            else
+            {
+                user_ptr->changeUsername();
+            }
+        }
+        else if (command == "chgpass" || command == "changepass" || command == "changepassword")
+        {
+            if (!USER_LOGGED_IN && user_ptr == nullptr)
+            {
+                printTypewriter("ERROR: To change password, you must first be logged in.", 2, 30, 40);
+            }
+            else
+            {
+                user_ptr->changePassword();
+            }
         }
         else if (command == "login" || command == "signin")
         {
@@ -1030,6 +1246,8 @@ inline void helpCommand(bool flag)
     if (flag) 
     {
     printTypewriter("    LOGOUT          Allow the user to logout out of their account.", 1, 0, 10);
+    //printTypewriter("    CHGUSER         Allow the user to change their username.", 1, 0, 10);
+    //printTypewriter("    CHGPASS         Allow the user to change their password.", 1, 0, 10);
     }
     else
     {
@@ -1061,7 +1279,7 @@ inline void dirCommand()
 inline void psmergCommand()
 {
     PS_MERGE_ON = !PS_MERGE_ON;
-    printTypewriter("\033[1mPowerShell and PromptShell merge has been turned ", 0); 
+    printTypewriter("\033[1mPromptShell and PowerShell merge has been turned ", 0); 
     printTypewriter((PS_MERGE_ON) ? "on.\033[0m" : "off.\033[0m", 2);
 }
 inline void versionCommand()
