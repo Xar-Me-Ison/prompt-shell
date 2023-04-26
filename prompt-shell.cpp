@@ -1,7 +1,9 @@
 #include <algorithm>
+#include <direct.h>
 #include <dirent.h>
 #include <ctime>
 #include <cstdlib>
+#include <conio.h>
 
 #include <iostream>
 #include <iterator>
@@ -12,14 +14,12 @@
 #include <vector>
 #include <unistd.h>  
 #include <sys/stat.h>
+#include <windows.h>
 /* --------------------
 PREPROCESSOR DIRECTIVES
 ----------------------- */
 #ifdef _WIN32
 #define OS_NAME "Windows"
-#include <windows.h>
-#include <conio.h>
-#include <direct.h>
 #define mkdir _mkdir
 #elif defined(__APPLE__)
 #define OS_NAME "Mac OS"
@@ -33,7 +33,7 @@ PREPROCESSOR DIRECTIVES
 GLOBAL VARIABLES 
 ---------------- */
 std::string OS = OS_NAME;
-std::string APPLICATION_VERSION = "[Version 2.0]";
+std::string APPLICATION_VERSION = "[Version 2.1]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -206,7 +206,7 @@ void promptShellUser::changeUsername()
     {
         if (input == username)
         {
-            printTypewriter("Username can't be the same as before, please try again.", 2);
+            printTypewriter("<> Username can't be the same as before, please try again.", 2);
             break;
         }
         printTypewriter("Username is taken, please try again.", 2);
@@ -214,7 +214,7 @@ void promptShellUser::changeUsername()
     }
 
     changeUserData(input, password);
-    printTypewriter("\033[1mUsername was changed sucessfully to '" + input + "'.\033[0m", 2, 30, 40);
+    printTypewriter("\033[1m<> Username was changed sucessfully to '" + input + "'.\033[0m", 2, 30, 40);
 }
 void promptShellUser::changePassword()
 {
@@ -269,7 +269,7 @@ void promptShellUser::changePassword()
             ACCOUNT_CREATED_SUCCESSFULLY = true; password_match = true;
             changeUserData(username, input1);
 
-            printTypewriter("\033[1mPassword was changed sucessfully.", 2, 30, 40);
+            printTypewriter("\033[1m<> Password was changed sucessfully.", 2, 30, 40);
         }
 
         password_counter++;
@@ -285,7 +285,7 @@ void promptShellUser::createUsername()
 
     while (input.size() > 60 || input.size() == 0 || !isUsernameAvailable(input))
     {
-        printTypewriter("Username is taken, please try again.", 2);
+        printTypewriter("<> Username is taken, please try again.", 2);
         printTypewriter("Username: ", 0); getline(std::cin, input);
     }
 
@@ -303,7 +303,7 @@ void promptShellUser::createPassword()
         printTypewriter("Password: ", 0); input1 = getPasswordFromUser();
         while (input1.size() <= 1)
         {
-            printTypewriter("Weak password, try again.", 2);
+            printTypewriter("<> Weak password, try again.", 2);
             printTypewriter("Password: ", 0); input1 = getPasswordFromUser();
         }
 
@@ -311,7 +311,7 @@ void promptShellUser::createPassword()
 
         while (input2.size() <= 1)
         {
-            printTypewriter("Weak password, try again.", 2);
+            printTypewriter("<> Weak password, try again.", 2);
             printTypewriter("Retype Password: ", 0); input2 = getPasswordFromUser();
         }
 
@@ -370,6 +370,12 @@ void promptShellUser::createUserData()
 }
 bool promptShellUser::isUsernameAvailable(std::string usrname)
 {
+    const char* path_userdata = ".userdata"; 
+    const char* path_database = ".database";
+
+    mkdir(path_userdata);
+    mkdir(path_database);
+
    	std::ifstream infile(".database/.usernames.txt");
     std::string search_string = usrname;
 	std::string line;
@@ -496,26 +502,14 @@ void promptShellUser::changeUserData(std::string usrname, std::string passwd)
     mkdir(path_userdata);
     mkdir(path_database);
 
-    if (SetFileAttributes(path_userdata, FILE_ATTRIBUTE_HIDDEN) == 0) { std::cout << "Failed to hide directory" << std::endl; }
-    if (SetFileAttributes(path_database, FILE_ATTRIBUTE_HIDDEN) == 0) { std::cout << "Failed to hide directory" << std::endl; }
+    if (SetFileAttributes(path_userdata, FILE_ATTRIBUTE_HIDDEN) == 0) { std::cout << "ERROR: Failed to hide directory" << std::endl; }
+    if (SetFileAttributes(path_database, FILE_ATTRIBUTE_HIDDEN) == 0) { std::cout << "ERROR: Failed to hide directory" << std::endl; }
 
 
     std::ifstream infile(".database/.usernames.txt");
-    // std::ofstream outfile(".database/temp.txt");
     
     std::string targetString;
     std::string replacementString;
-
-    // if (usrname != username)
-    // {
-    //     targetString = username;
-    //     replacementString = usrname;
-    // }
-    // else
-    // {
-    //     targetString = password;
-    //     replacementString = passwd;
-    // }
 
     std::string line;
     std::regex regex("\\b" + username + "\\b");
@@ -528,12 +522,6 @@ void promptShellUser::changeUserData(std::string usrname, std::string passwd)
     }
 
     infile.close();
-    // outfile.close();
-
-    std::remove(".database/.usernames.txt");
-    std::rename(".database/temp.txt", ".database/.usernames.txt");
-    
-    // std::rename((".database/" + username + ".txt").c_str(), (".database/" + usrname + ".txt").c_str());
     
     std::remove((".userdata/" + username + ".txt").c_str());
     username = usrname;
@@ -735,7 +723,7 @@ void promptShellLoginSignIn()
         {
             if (USER_LOGGED_IN && user_ptr != nullptr)
             {
-                printTypewriter("\nYou have now been logged out as \033[1m" + user_ptr->getterUsername() + "\033[0m.", 1, 30, 40);
+                printTypewriter("\n<> You have now been logged out as \033[1m" + user_ptr->getterUsername() + "\033[0m.", 1, 30, 40);
                 promptShellIntroduction();
 
                 delete user_ptr; user_ptr = nullptr;
