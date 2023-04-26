@@ -1,9 +1,7 @@
 #include <algorithm>
-#include <direct.h>
 #include <dirent.h>
 #include <ctime>
 #include <cstdlib>
-#include <conio.h>
 
 #include <iostream>
 #include <iterator>
@@ -14,12 +12,14 @@
 #include <vector>
 #include <unistd.h>  
 #include <sys/stat.h>
-#include <windows.h>
 /* --------------------
 PREPROCESSOR DIRECTIVES
 ----------------------- */
 #ifdef _WIN32
 #define OS_NAME "Windows"
+#include <windows.h>
+#include <conio.h>
+#include <direct.h>
 #define mkdir _mkdir
 #elif defined(__APPLE__)
 #define OS_NAME "Mac OS"
