@@ -620,7 +620,9 @@ void promptShellLoginSignIn()
             continue;
 
         command = tokens[0];
-    
+
+        std::transform(command.begin(), command.end(), command.begin(), ::tolower);
+
         if (command == "help")
         {
             if (USER_LOGGED_IN)
@@ -1234,8 +1236,8 @@ inline void helpCommand(bool flag)
     if (flag) 
     {
     printTypewriter("    LOGOUT          Allow the user to logout out of their account.", 1, 0, 10);
-    //printTypewriter("    CHGUSER         Allow the user to change their username.", 1, 0, 10);
-    //printTypewriter("    CHGPASS         Allow the user to change their password.", 1, 0, 10);
+    printTypewriter("    CHGUSER         Allow the user to change their username.", 1, 0, 10);
+    printTypewriter("    CHGPASS         Allow the user to change their password.", 1, 0, 10);
     }
     else
     {
