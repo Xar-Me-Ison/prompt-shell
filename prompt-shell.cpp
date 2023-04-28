@@ -33,7 +33,7 @@ PREPROCESSOR DIRECTIVES
 GLOBAL VARIABLES 
 ---------------- */
 std::string OS = OS_NAME;
-std::string APPLICATION_VERSION = "[Version 2.2]";
+std::string APPLICATION_VERSION = "[Version 2.3]";
 std::string APPLICATION_DATE_VERSION = "2023.04";
 
 std::string USER_INPUT = "";
@@ -43,6 +43,7 @@ std::string USER_GUEST_DIRECTORY = "";
 bool PS_MERGE_ON = false;
 bool STATUS_EXIT_ON = false;
 bool USER_LOGGED_IN = false;
+bool USER_CHANGED_DATA = false;
 bool TEXT_DELAY_ON = false;
 bool LINE_SEPERATOR_ON = false;
 bool DIRECTORY_SHOW_ON = false;
@@ -209,7 +210,7 @@ void promptShellUser::changeUsername()
             printTypewriter("<> Username can't be the same as before, please try again.", 2);
             break;
         }
-        printTypewriter("Username is taken, please try again.", 2);
+        printTypewriter("\033[1mUsername is taken, please try again.\033[0m", 2);
         printTypewriter("New Username: ", 0); getline(std::cin, input);
     }
 
@@ -261,7 +262,7 @@ void promptShellUser::changePassword()
                 ACCOUNT_CREATED_SUCCESSFULLY = false;
                 break;
             }
-            printTypewriter("\033[1mERROR: Password do not match.\033[0m", 2);
+            printTypewriter("\033[1mERROR: Password do not match.\033[0m", 1);
             password_match = false;
         }
         else
@@ -269,7 +270,7 @@ void promptShellUser::changePassword()
             ACCOUNT_CREATED_SUCCESSFULLY = true; password_match = true;
             changeUserData(username, input1);
 
-            printTypewriter("\033[1m<> Password was changed sucessfully.", 2, 30, 40);
+            printTypewriter("\033[1m<> Password was changed sucessfully.\033[0m", 2, 30, 40);
         }
 
         password_counter++;
@@ -285,7 +286,7 @@ void promptShellUser::createUsername()
 
     while (input.size() > 60 || input.size() == 0 || !isUsernameAvailable(input))
     {
-        printTypewriter("<> Username is taken, please try again.", 2);
+        printTypewriter("\033[1m<> Username is taken, please try again.\033[0m", 2);
         printTypewriter("Username: ", 0); getline(std::cin, input);
     }
 
@@ -303,7 +304,7 @@ void promptShellUser::createPassword()
         printTypewriter("Password: ", 0); input1 = getPasswordFromUser();
         while (input1.size() <= 1)
         {
-            printTypewriter("<> Weak password, try again.", 2);
+            printTypewriter("\033[1m<> Weak password, try again.\033[0m", 2);
             printTypewriter("Password: ", 0); input1 = getPasswordFromUser();
         }
 
@@ -311,7 +312,7 @@ void promptShellUser::createPassword()
 
         while (input2.size() <= 1)
         {
-            printTypewriter("<> Weak password, try again.", 2);
+            printTypewriter("\033[1m<> Weak password, try again.\033[0m", 2);
             printTypewriter("Retype Password: ", 0); input2 = getPasswordFromUser();
         }
 
@@ -353,9 +354,11 @@ void promptShellUser::createUserData()
 
     // In the case of a file error ..
     if (!outputfile) { std::cout << "Error creating database file" << std::endl; }
-    outputfile << username << std::endl;
+    if (!USER_CHANGED_DATA)
+        outputfile << username << std::endl;
     outputfile.close();
 
+    USER_CHANGED_DATA = false;
     std::string fl_userdata = ".userdata/" + username + ".txt";
     const char* fn_userdata = fl_userdata.c_str();
     std::ofstream outfile(fn_userdata);
@@ -506,26 +509,23 @@ void promptShellUser::changeUserData(std::string usrname, std::string passwd)
     if (SetFileAttributes(path_database, FILE_ATTRIBUTE_HIDDEN) == 0) { std::cout << "ERROR: Failed to hide directory" << std::endl; }
 
 
-    std::ifstream infile(".database/.usernames.txt");
-    
-    std::string targetString;
-    std::string replacementString;
-
-    std::string line;
-    std::regex regex("\\b" + username + "\\b");
-    while (std::getline(infile, line))
-    {
-        if (std::regex_search(line, regex))  
-            std::regex_replace(line, regex, usrname); 
-        // else if (std::regex_search(line, username))
-        //     continue;
-    }
-
+    std::ifstream infile(".database/.usernames.txt"); if (!infile.is_open()) { return; }
+    std::string file_content((std::istreambuf_iterator<char>(infile)), (std::istreambuf_iterator<char>()));
     infile.close();
+    
+    std::regex target_regex("\\b" + username + "\\b");
+    std::string replacement_string = usrname;
+    file_content = std::regex_replace(file_content, target_regex, replacement_string);
+
+    std::ofstream outfile(".database/.usernames.txt", std::ios::out | std::ios::trunc);
+    outfile << file_content;
+    outfile.close();
+
     
     std::remove((".userdata/" + username + ".txt").c_str());
     username = usrname;
     password = passwd;
+    USER_CHANGED_DATA = true;
     createUserData();
 }
 bool promptShellUser::verifyUser()
